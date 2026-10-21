@@ -1,0 +1,3878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hosyond 45-in-1 Sensor Kit | Project & Code Hub</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-hover: #273549;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --code-bg: #0b1120;
+      --tag-bg: #1e3a8a;
+      --tag-text: #93c5fd;
+      --success: #10b981;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 30px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .logo-area h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #38bdf8;
+    }
+    .badge-count {
+      background: #0284c7;
+      color: white;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      vertical-align: middle;
+    }
+    .header-links {
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover {
+      background: var(--card-bg);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.8rem;
+    }
+    .search-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+    .category-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pill {
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .pill:hover, .pill.active {
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 600;
+      border-color: var(--accent);
+    }
+    main {
+      max-width: 1400px;
+      margin: 25px auto;
+      padding: 0 20px;
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 24px;
+    }
+    .project-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .project-card:hover {
+      transform: translateY(-3px);
+      border-color: #475569;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .card-title-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .proj-badge {
+      background: #0284c7;
+      color: white;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      min-width: 38px;
+      text-align: center;
+    }
+    .proj-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .cat-tag {
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .card-media {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #0b1120;
+      border-bottom: 1px solid var(--border);
+    }
+    .media-box {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #1e293b;
+      aspect-ratio: 4 / 3;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      border: 1px solid #334155;
+    }
+    .media-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+    .media-box:hover img {
+      transform: scale(1.05);
+    }
+    .media-label {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      background: rgba(15, 23, 42, 0.85);
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #94a3b8;
+      backdrop-filter: blur(2px);
+    }
+    .no-img {
+      color: #64748b;
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 10px;
+    }
+    .card-body {
+      padding: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-specs {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      border-left: 3px solid var(--accent);
+    }
+    .card-specs ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .card-specs li {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid rgba(51, 65, 85, 0.5);
+    }
+    .code-section {
+      display: none;
+      background: var(--code-bg);
+      border-top: 1px solid var(--border);
+      padding: 14px;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .code-title {
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #38bdf8;
+    }
+    pre {
+      font-family: 'Consolas', 'Fira Code', Monaco, monospace;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    /* Modal for Image Preview */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(5px);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+      border: 1px solid #475569;
+    }
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 35px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .modal-caption {
+      position: absolute;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+      grid-column: 1 / -1;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-container">
+    <div class="header-top">
+      <div class="logo-area">
+        <h1>
+          <span>⚡ Hosyond 45-in-1 Sensor Kit</span>
+          <span class="badge-count">45 Modules</span>
+        </h1>
+      </div>
+      <div class="header-links">
+        <a href="docs/build/html/index.html" class="btn btn-primary" target="_blank">
+          📖 Full ReadTheDocs Site
+        </a>
+        <a href="Code/" class="btn btn-outline" target="_blank">
+          📁 Browse Code Directory
+        </a>
+      </div>
+    </div>
+    <div class="search-filter-bar">
+      <div class="search-box">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search sensor, pin, keyword (e.g. RGB, DHT11, Buzzer, Ultrasonic)...">
+      </div>
+      <div class="category-pills" id="categoryPills">
+        <button class="pill active" data-category="ALL">All (45)</button>
+        <button class="pill" data-category="Audio / Sound">Audio / Sound (4)</button>
+        <button class="pill" data-category="Controls &amp; Switches">Controls &amp; Switches (5)</button>
+        <button class="pill" data-category="Environmental">Environmental (5)</button>
+        <button class="pill" data-category="Lighting / LED">Lighting / LED (4)</button>
+        <button class="pill" data-category="Magnetic">Magnetic (5)</button>
+        <button class="pill" data-category="Modules &amp; Storage">Modules &amp; Storage (3)</button>
+        <button class="pill" data-category="Motion / Vibration">Motion / Vibration (4)</button>
+        <button class="pill" data-category="Optical &amp; Distance">Optical &amp; Distance (9)</button>
+        <button class="pill" data-category="Power Supply">Power Supply (2)</button>
+        <button class="pill" data-category="Sensors">Sensors (4)</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="projects-grid" id="projectsGrid">
+
+    <div class="project-card" data-num="1" data-category="Lighting / LED" data-title="rgb led" data-desc="this is a full-color led module, which contains 3 basic colors－red, green and blue. they can be seen as separate led lights. after programming, you can turn them on and off by sequence or can also use pwm analog output to mix three colors to generate different colors.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#1</span>
+          <span class="proj-title">RGB LED</span>
+        </div>
+        <span class="cat-tag">Lighting / LED</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/1_bb.png', 'Project 1: RGB LED - Wiring Diagram')">
+          <img src="docs/source/img/connect/1_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/1.jpg', 'Project 1: RGB LED - Phenomenon')">
+          <img src="docs/source/img/phenomenon/1.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This is a full-color LED module, which contains 3 basic colors－red, green and blue. They can be seen as separate LED lights. After programming, you can turn them on and off by sequence or can also use PWM analog output to mix three colors to generate different colors.">
+          This is a full-color LED module, which contains 3 basic colors－red, green and blue. They can be seen as separate LED lights. After programming, you can turn them on and off by sequence or can also use PWM analog output to mix three colors to generate different colors.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Color: Red, Green, and Blue</li><li>• Brightness: High</li><li>• Voltage: 5V</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(1)">⚡ View Code</button>
+          <a href="Code/1.Rgb_Led" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/1.rgb_led.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_1">
+        <div class="code-header">
+          <span class="code-title">📄 1.Rgb_Led.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_1', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_1"><code>int redpin = 11;    //select the pin for the red LED
+int bluepin = 10;   // select the pin for the blue LED
+int greenpin = 9;   // select the pin for the green LED
+int val;
+void setup() {
+    pinMode(redpin, OUTPUT);
+    pinMode(bluepin, OUTPUT);
+    pinMode(greenpin, OUTPUT);
+}
+void loop()
+{ for (val = 255; val &gt; 0; val--)
+    { analogWrite(11, val);
+    analogWrite(10, 255 - val);
+    analogWrite(9, 128 - val);
+    delay(1);
+    }
+    for (val = 0; val &lt; 255; val++)
+    { analogWrite(11, val);
+    analogWrite(10, 255 - val);
+    analogWrite(9, 128 - val);
+    delay(1);
+    }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="2" data-category="Sensors" data-title="smd rgb" data-desc="this is a full-color led module, which contains 3 basic colors－red, green and blue. they can be seen as separate led lights. after programming, you can turn them on and off by sequence or can also use pwm analog output to mix three colors to generate different colors.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#2</span>
+          <span class="proj-title">SMD RGB</span>
+        </div>
+        <span class="cat-tag">Sensors</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/2_bb.png', 'Project 2: SMD RGB - Wiring Diagram')">
+          <img src="docs/source/img/connect/2_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/2.jpg', 'Project 2: SMD RGB - Phenomenon')">
+          <img src="docs/source/img/phenomenon/2.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This is a full-color LED module, which contains 3 basic colors－red, green and blue. They can be seen as separate LED lights. After programming, you can turn them on and off by sequence or can also use PWM analog output to mix three colors to generate different colors.">
+          This is a full-color LED module, which contains 3 basic colors－red, green and blue. They can be seen as separate LED lights. After programming, you can turn them on and off by sequence or can also use PWM analog output to mix three colors to generate different colors.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Color: Red, Green, and Blue</li><li>• Brightness: High</li><li>• Voltage: 5V</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(2)">⚡ View Code</button>
+          <a href="Code/2.Smd_Rgb" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/2.smd_rgb.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_2">
+        <div class="code-header">
+          <span class="code-title">📄 2.Smd_Rgb.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_2', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_2"><code>int redpin = 11;    //select the pin for the red LED
+int bluepin = 10;   // select the pin for the blue LED
+int greenpin = 9;   // select the pin for the green LED
+int val;
+void setup() {
+    pinMode(redpin, OUTPUT);
+    pinMode(bluepin, OUTPUT);
+    pinMode(greenpin, OUTPUT);
+}
+void loop()
+{ for (val = 255; val &gt; 0; val--)
+    { analogWrite(11, val);
+    analogWrite(10, 255 - val);
+    analogWrite(9, 128 - val);
+    delay(1);
+    }
+    for (val = 0; val &lt; 255; val++)
+    { analogWrite(11, val);
+    analogWrite(10, 255 - val);
+    analogWrite(9, 128 - val);
+    delay(1);
+    }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="3" data-category="Lighting / LED" data-title="7 color flash" data-desc="this is a seven-color flashing module that can emit seven colors, including red, green, and blue.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#3</span>
+          <span class="proj-title">7 Color Flash</span>
+        </div>
+        <span class="cat-tag">Lighting / LED</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/3_bb.png', 'Project 3: 7 Color Flash - Wiring Diagram')">
+          <img src="docs/source/img/connect/3_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/3.jpg', 'Project 3: 7 Color Flash - Phenomenon')">
+          <img src="docs/source/img/phenomenon/3.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This is a seven-color flashing module that can emit seven colors, including red, green, and blue.">
+          This is a seven-color flashing module that can emit seven colors, including red, green, and blue.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Color: 7</li><li>• Brightness: High</li><li>• Voltage: 5V</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <span class="btn btn-outline btn-sm" style="opacity:0.6;cursor:default;">⚙️ Hardware Only</span>
+          <a href="Code/3.7_Color_Flash" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/3.7_color_flash.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="4" data-category="Optical &amp; Distance" data-title="laser module" data-desc="the ky-008 is a laser transmitter module that creates a dot-shaped laser beam 
+that can be used as a laser pointer or to create mini laser shows.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#4</span>
+          <span class="proj-title">Laser Module</span>
+        </div>
+        <span class="cat-tag">Optical &amp; Distance</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/4_bb.png', 'Project 4: Laser Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/4_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/4.jpg', 'Project 4: Laser Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/4.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-008 is a laser transmitter module that creates a dot-shaped laser beam 
+that can be used as a laser pointer or to create mini laser shows.">
+          The KY-008 is a laser transmitter module that creates a dot-shaped laser beam 
+that can be used as a laser pointer or to create mini laser shows.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Wavelength: 650 nm (Red)</li><li>• Laser Power: 5 mW</li><li>• Operating Voltage: 3-5 volts</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(4)">⚡ View Code</button>
+          <a href="Code/4.Laser_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/4.laser_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_4">
+        <div class="code-header">
+          <span class="code-title">📄 4.Laser_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_4', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_4"><code>void setup() {
+pinMode(9, OUTPUT);
+}
+
+void loop() {
+digitalWrite(9, HIGH);
+delay(300);
+
+digitalWrite(9, LOW);
+delay(700);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="5" data-category="Optical &amp; Distance" data-title="digital ir transmitters" data-desc="ir transmitter module is designed for ir communication, which is widely used for
+operating the television device from a short line-of-sight distance. since 
+infrared (ir) remote control uses light, it requires line of sight to operate 
+the destination device. the signal can, however, be reflected by mirrors, just 
+like any other light sources. infrared receivers also tend to have a more or 
+less limited operating angle, which mainly depends on the optical characteristics 
+of the phototransistor. however, it’s easy to increase the operating angle 
+using a matte transparent object in front of the receiver.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#5</span>
+          <span class="proj-title">Digital IR Transmitters</span>
+        </div>
+        <span class="cat-tag">Optical &amp; Distance</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/5_bb.png', 'Project 5: Digital IR Transmitters - Wiring Diagram')">
+          <img src="docs/source/img/connect/5_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/5.jpg', 'Project 5: Digital IR Transmitters - Phenomenon')">
+          <img src="docs/source/img/phenomenon/5.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="IR transmitter module is designed for IR communication, which is widely used for
+operating the television device from a short line-of-sight distance. Since 
+infrared (IR) remote control uses light, it requires line of sight to operate 
+the destination device. The signal can, however, be reflected by mirrors, just 
+like any other light sources. Infrared receivers also tend to have a more or 
+less limited operating angle, which mainly depends on the optical characteristics 
+of the phototransistor. However, it’s easy to increase the operating angle 
+using a matte transparent object in front of the receiver.">
+          IR transmitter module is designed for IR communication, which is widely used for
+operating the television device from a short line-of-sight distance. Since 
+infrared (IR) remote control uses light, it requires line of sight to operate 
+the destination device. The signal can, however, be reflected by mirrors, just 
+like any other light sources. Infrared receivers also tend to have a more or 
+less limited operating angle, which mainly depends on the optical characteristics 
+of the phototransistor. However, it’s easy to increase the operating angle 
+using a matte transparent object in front of the receiver.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Power Supply: 3-5V</li><li>• Infrared center frequency: 850nm-940nm</li><li>• Infrared emission angle: about 20 degrees</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(5)">⚡ View Code</button>
+          <a href="Code/5.Digital_Ir_Transmitters" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/5.ir_transmitters.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_5">
+        <div class="code-header">
+          <span class="code-title">📄 5.Digital_Ir_Transmitters.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_5', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_5"><code>int led = 3;
+void setup() {
+pinMode(led, OUTPUT);
+}
+void loop() {
+digitalWrite(led, HIGH);
+
+delay(1000);
+digitalWrite(led, LOW);
+delay(1000); }</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="6" data-category="Optical &amp; Distance" data-title="digital ir receiver" data-desc="ir is widely used in remote control. with this ir receiver, arduino project is 
+able to receive command from any ir remoter controllers if you have the right 
+decoder. well, it will be also easy to make your own ir controller using ir 
+transmitter.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#6</span>
+          <span class="proj-title">Digital IR Receiver</span>
+        </div>
+        <span class="cat-tag">Optical &amp; Distance</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/6_bb.png', 'Project 6: Digital IR Receiver - Wiring Diagram')">
+          <img src="docs/source/img/connect/6_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/6.jpg', 'Project 6: Digital IR Receiver - Phenomenon')">
+          <img src="docs/source/img/phenomenon/6.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="IR is widely used in remote control. With this IR receiver, Arduino project is 
+able to receive command from any IR remoter controllers if you have the right 
+decoder. Well, it will be also easy to make your own IR controller using IR 
+transmitter.">
+          IR is widely used in remote control. With this IR receiver, Arduino project is 
+able to receive command from any IR remoter controllers if you have the right 
+decoder. Well, it will be also easy to make your own IR controller using IR 
+transmitter.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Power Supply: 5V</li><li>• Interface: Digital</li><li>• Modulation Frequency: 38Khz</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(6)">⚡ View Code</button>
+          <a href="Code/6.Digital_Ir_Receiver1" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/6.ir_receiver.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_6">
+        <div class="code-header">
+          <span class="code-title">📄 6.Digital_Ir_Receiver1.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_6', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_6"><code>#include &lt;IRremote.h&gt;
+int IR_PIN = 3;
+IRsend irsend(IR_PIN);
+    void setup()
+    {}
+    void loop() {
+    irsend.sendRC5(0x0, 8); //send 0x0 code (8 bits)
+        delay(200);
+    irsend.sendRC5(0x1, 8); 
+        delay(200); }</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="7" data-category="Environmental" data-title="dht11 module" data-desc="this dht11 sensor features calibrated digital signal output with the temperature 
+and humidity sensor complex. its technology ensures high reliability and excellent 
+long-term stability. a high-performance 8-bit microcontroller is connected on the 
+sensor. this sensor includes a resistive element and a sense of wet ntc temperature 
+measuring devices.it has advantages of excellent quality, fast response, anti-interference 
+ability and high cost performance.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#7</span>
+          <span class="proj-title">DHT11 Module</span>
+        </div>
+        <span class="cat-tag">Environmental</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/7_bb.png', 'Project 7: DHT11 Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/7_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/7.jpg', 'Project 7: DHT11 Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/7.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This DHT11 sensor features calibrated digital signal output with the temperature 
+and humidity sensor complex. Its technology ensures high reliability and excellent 
+long-term stability. A high-performance 8-bit microcontroller is connected on the 
+sensor. This sensor includes a resistive element and a sense of wet NTC temperature 
+measuring devices.It has advantages of excellent quality, fast response, anti-interference 
+ability and high cost performance.">
+          This DHT11 sensor features calibrated digital signal output with the temperature 
+and humidity sensor complex. Its technology ensures high reliability and excellent 
+long-term stability. A high-performance 8-bit microcontroller is connected on the 
+sensor. This sensor includes a resistive element and a sense of wet NTC temperature 
+measuring devices.It has advantages of excellent quality, fast response, anti-interference 
+ability and high cost performance.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Supply Voltage: +5 V</li><li>• Temperature range: 0-50 °C error of ± 2 °C</li><li>• Humidity: 20-90% RH ± 5% RH error</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(7)">⚡ View Code</button>
+          <a href="Code/7.DHT11" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/7.dht11_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_7">
+        <div class="code-header">
+          <span class="code-title">📄 DHT11.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_7', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_7"><code>#include &lt;SimpleDHT.h&gt;
+
+int pinDHT11 = 2;
+SimpleDHT11 dht11;
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  // start working...
+  Serial.println(&quot;=================================&quot;);
+  Serial.println(&quot;Sample DHT11...&quot;);
+  
+  // read with raw sample data.
+  byte temperature = 0;
+  byte humidity = 0;
+  byte data[40] = {0};
+  if (dht11.read(pinDHT11, &amp;temperature, &amp;humidity, data)) {
+    Serial.print(&quot;Read DHT11 failed&quot;);
+    return;
+  }
+  
+  Serial.print(&quot;Sample RAW Bits: &quot;);
+  for (int i = 0; i &lt; 40; i++) {
+    Serial.print((int)data[i]);
+    if (i &gt; 0 &amp;&amp; ((i + 1) % 4) == 0) {
+      Serial.print(&#x27; &#x27;);
+    }
+  }
+  Serial.println(&quot;&quot;);
+  
+  Serial.print(&quot;Sample OK: &quot;);
+  Serial.print((int)temperature); Serial.print(&quot; *C, &quot;);
+  Serial.print((int)humidity); Serial.println(&quot; %&quot;);
+  
+  // DHT11 sampling rate is 1HZ.
+  delay(1000);
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="8" data-category="Lighting / LED" data-title="double color led" data-desc="the ky-011 two color led module emits red and green light. you can adjust the 
+intensity of each color using pwm.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#8</span>
+          <span class="proj-title">Double Color Led</span>
+        </div>
+        <span class="cat-tag">Lighting / LED</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/8_bb.png', 'Project 8: Double Color Led - Wiring Diagram')">
+          <img src="docs/source/img/connect/8_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/8.jpg', 'Project 8: Double Color Led - Phenomenon')">
+          <img src="docs/source/img/phenomenon/8.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-011 Two Color LED module emits red and green light. You can adjust the 
+intensity of each color using PWM.">
+          The KY-011 Two Color LED module emits red and green light. You can adjust the 
+intensity of each color using PWM.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	2.0v ~ 2.5v</li><li>• Working Current	10mA</li><li>• Diameter	3mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(8)">⚡ View Code</button>
+          <a href="Code/8.Double_Color_Led" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/8.double_color_led.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_8">
+        <div class="code-header">
+          <span class="code-title">📄 8.Double_Color_Led.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_8', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_8"><code>int greenpin = 11; // pin for green signal
+int redpin = 10; // pin for red signal
+int val;
+
+void setup() {
+    pinMode(redpin, OUTPUT);
+    pinMode(greenpin, OUTPUT);
+}
+
+void loop() {
+    for(val = 255; val &gt; 0; val--) {
+        analogWrite(redpin, val); //dim red
+        analogWrite(greenpin, 255 - val); // brighten green
+        delay(15);
+    }
+    for(val = 0; val &lt; 255; val++) {
+        analogWrite(redpin, val); //brighten red
+        analogWrite(greenpin, 255 - val); //dim green
+        delay(15);
+    }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="9" data-category="Lighting / LED" data-title="mini double color led" data-desc="the ky-011 two color led module emits red and green light. you can adjust the 
+intensity of each color using pwm.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#9</span>
+          <span class="proj-title">Mini Double Color Led</span>
+        </div>
+        <span class="cat-tag">Lighting / LED</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/9_bb.png', 'Project 9: Mini Double Color Led - Wiring Diagram')">
+          <img src="docs/source/img/connect/9_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/9.jpg', 'Project 9: Mini Double Color Led - Phenomenon')">
+          <img src="docs/source/img/phenomenon/9.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-011 Two Color LED module emits red and green light. You can adjust the 
+intensity of each color using PWM.">
+          The KY-011 Two Color LED module emits red and green light. You can adjust the 
+intensity of each color using PWM.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	2.0v ~ 2.5v</li><li>• Working Current	10mA</li><li>• Diameter	3mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(9)">⚡ View Code</button>
+          <a href="Code/9.Mini_Double_Color_Led" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/9.mini_double_color_led.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_9">
+        <div class="code-header">
+          <span class="code-title">📄 9.Mini_Double_Color_Led.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_9', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_9"><code>int greenpin = 11; // pin for green signal
+int redpin = 10; // pin for red signal
+int val;
+
+void setup() {
+    pinMode(redpin, OUTPUT);
+    pinMode(greenpin, OUTPUT);
+}
+
+void loop() {
+    for(val = 255; val &gt; 0; val--) {
+        analogWrite(redpin, val); //dim red
+        analogWrite(greenpin, 255 - val); // brighten green
+        delay(15);
+    }
+    for(val = 0; val &lt; 255; val++) {
+        analogWrite(redpin, val); //brighten red
+        analogWrite(greenpin, 255 - val); //dim green
+        delay(15);
+    }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="10" data-category="Sensors" data-title="magical light cup" data-desc="magic light cup module is able to interact with arduino. the principle is based 
+on pwm dimming.the mercury switch on the module can provide a digital signal and 
+trigger pwm regulation. the brightness of two modules will be changed together 
+through the program design, finally you can see the changing effect that two set 
+of cups are pouring the light.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#10</span>
+          <span class="proj-title">Magical Light Cup</span>
+        </div>
+        <span class="cat-tag">Sensors</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/10_bb.png', 'Project 10: Magical Light Cup - Wiring Diagram')">
+          <img src="docs/source/img/connect/10_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/10.jpg', 'Project 10: Magical Light Cup - Phenomenon')">
+          <img src="docs/source/img/phenomenon/10.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="Magic light cup module is able to interact with ARDUINO. The principle is based 
+on PWM dimming.The mercury switch on the module can provide a digital signal and 
+trigger PWM regulation. The brightness of two modules will be changed together 
+through the program design, finally you can see the changing effect that two set 
+of cups are pouring the light.">
+          Magic light cup module is able to interact with ARDUINO. The principle is based 
+on PWM dimming.The mercury switch on the module can provide a digital signal and 
+trigger PWM regulation. The brightness of two modules will be changed together 
+through the program design, finally you can see the changing effect that two set 
+of cups are pouring the light.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Supply Voltage: 3.3V to 5V</li><li>• Interface: Digital</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(10)">⚡ View Code</button>
+          <a href="Code/10.Light_Cup" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/10.light_cup.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_10">
+        <div class="code-header">
+          <span class="code-title">📄 Magic_light_cup_module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_10', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_10"><code>int LedPinA = 5;
+int LedPinB = 6;
+int ButtonPinA = 7;
+int ButtonPinB = 4;
+int buttonStateA = 0;
+int buttonStateB = 0;
+int brightnessA = 0;
+int brightnessB= 255;
+void setup()
+{
+Serial.begin(9600);
+pinMode(LedPinA, OUTPUT);
+pinMode(LedPinB, OUTPUT);
+
+
+pinMode(ButtonPinA, INPUT);
+pinMode(ButtonPinB, INPUT);
+}
+void loop()
+{
+buttonStateA = digitalRead(ButtonPinA);
+if (buttonStateA == HIGH &amp;&amp; brightnessA != 255)
+{
+brightnessA ++;
+}
+if (buttonStateA == LOW &amp;&amp; brightnessA != 0)
+{
+brightnessA --;
+}
+analogWrite(LedPinB, brightnessA);
+Serial.print(brightnessA);
+
+Serial.print(&quot;   &quot;);
+buttonStateB = digitalRead(ButtonPinB);
+if (buttonStateB == HIGH &amp;&amp; brightnessB != 0)
+{
+brightnessB --;
+}
+if (buttonStateB == LOW &amp;&amp; brightnessB != 255)
+{
+brightnessB++;
+}
+analogWrite(LedPinA, brightnessB); 
+Serial.println(brightnessB);
+delay(5);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="11" data-category="Audio / Sound" data-title="active buzzer" data-desc="here is the simplest sound making module. you can use high/low level to drive it.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#11</span>
+          <span class="proj-title">Active Buzzer</span>
+        </div>
+        <span class="cat-tag">Audio / Sound</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/11_bb.png', 'Project 11: Active Buzzer - Wiring Diagram')">
+          <img src="docs/source/img/connect/11_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/11.jpg', 'Project 11: Active Buzzer - Phenomenon')">
+          <img src="docs/source/img/phenomenon/11.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="Here is the simplest sound making module. You can use high/low level to drive it.">
+          Here is the simplest sound making module. You can use high/low level to drive it.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Working voltage: 3.3-5v</li><li>• Interface type: digital</li><li>• Size: 30*20mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(11)">⚡ View Code</button>
+          <a href="Code/11.Active Buzzer" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/11.active_buzzer.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_11">
+        <div class="code-header">
+          <span class="code-title">📄 Active_buzzer_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_11', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_11"><code>int buzzPin =3;    //Connect Buzzer on Digital Pin3
+ void setup()  
+ {        
+  pinMode(buzzPin, OUTPUT);     
+}
+ void loop()                     
+{
+  digitalWrite(buzzPin, HIGH);
+  delay(1000);
+  digitalWrite(buzzPin, LOW); 
+  delay(1000);        
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="12" data-category="Audio / Sound" data-title="passtive buzzer" data-desc="we can use arduino to make many interactive works of which the most commonly used 
+is acoustic-optic display. the circuit in this experiment can produce sound.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#12</span>
+          <span class="proj-title">Passtive Buzzer</span>
+        </div>
+        <span class="cat-tag">Audio / Sound</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/12_bb.png', 'Project 12: Passtive Buzzer - Wiring Diagram')">
+          <img src="docs/source/img/connect/12_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/12.jpg', 'Project 12: Passtive Buzzer - Phenomenon')">
+          <img src="docs/source/img/phenomenon/12.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="We can use Arduino to make many interactive works of which the most commonly used 
+is acoustic-optic display. The circuit in this experiment can produce sound.">
+          We can use Arduino to make many interactive works of which the most commonly used 
+is acoustic-optic display. The circuit in this experiment can produce sound.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Working voltage: 3.3-5v</li><li>• Interface type: digital</li><li>• Size: 30*20mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(12)">⚡ View Code</button>
+          <a href="Code/12.Passtive Buzzer" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/12.passtive_buzzer.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_12">
+        <div class="code-header">
+          <span class="code-title">📄 Passtive_Buzzer.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_12', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_12"><code>int buzzer=3;//set digital IO pin of the buzzer
+void setup() 
+{ 
+pinMode(buzzer,OUTPUT);// set digital IO pin pattern, OUTPUT to be output 
+} 
+void loop() 
+{ unsigned char i,j;//define variable
+while(1) 
+{ for(i=0;i&lt;80;i++)// output a frequency sound
+{ digitalWrite(buzzer,HIGH);// sound
+delay(1);//delay1ms 
+digitalWrite(buzzer,LOW);//not sound
+delay(1);//ms delay 
+} 
+for(i=0;i&lt;100;i++)// output a frequency sound
+{ 
+digitalWrite(buzzer,HIGH);// sound
+digitalWrite(buzzer,LOW);//not sound
+delay(2);//2ms delay 
+}
+} 
+} </code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="13" data-category="Environmental" data-title="analog temperature" data-desc="this module is based on the working principle of a thermistor (resistance varies 
+with temperature change in the environment).it can sense temperature changes in 
+the surrounding and send the data to the analog io of arduino board. all we need 
+to do is to convert the sensor’s output data into degrees celsius temperature via 
+simple programming, finally displaying it on the monitor.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#13</span>
+          <span class="proj-title">Analog Temperature</span>
+        </div>
+        <span class="cat-tag">Environmental</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/13_bb.png', 'Project 13: Analog Temperature - Wiring Diagram')">
+          <img src="docs/source/img/connect/13_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/13.jpg', 'Project 13: Analog Temperature - Phenomenon')">
+          <img src="docs/source/img/phenomenon/13.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This module is based on the working principle of a thermistor (resistance varies 
+with temperature change in the environment).It can sense temperature changes in 
+the surrounding and send the data to the analog IO of Arduino board. All we need 
+to do is to convert the sensor’s output data into degrees Celsius temperature via 
+simple programming, finally displaying it on the monitor.">
+          This module is based on the working principle of a thermistor (resistance varies 
+with temperature change in the environment).It can sense temperature changes in 
+the surrounding and send the data to the analog IO of Arduino board. All we need 
+to do is to convert the sensor’s output data into degrees Celsius temperature via 
+simple programming, finally displaying it on the monitor.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Interface type: analog</li><li>• Working voltage: 5V</li><li>• Temperature range: -55℃～315℃</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(13)">⚡ View Code</button>
+          <a href="Code/13.Temp" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/13.analog_temperature.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_13">
+        <div class="code-header">
+          <span class="code-title">📄 temp.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_13', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_13"><code>int ThermistorPin = A0;
+int Vo;
+float R1 = 10000; // value of R1 on board
+float logR2, R2, T;
+float c1 = 0.001129148, c2 = 0.000234125, c3 = 0.0000000876741; //steinhart-hart coeficients for thermistor
+void setup() {
+  Serial.begin(9600);
+}
+void loop() {
+  Vo = analogRead(ThermistorPin);
+  // R2 = R1 * (1023.0 / (float)Vo - 1.0); //calculate resistance on thermistor
+  R2 = R1 / ((1023.0 / (float)Vo) - 1.0);
+  logR2 = log(R2);
+  T = (1.0 / (c1 + c2*logR2 + c3*logR2*logR2*logR2)); // temperature in Kelvin
+  T = T - 273.15; //convert Kelvin to Celcius
+ // T = (T * 9.0)/ 5.0 + 32.0; //convert Celcius to Farenheit
+
+  Serial.print(&quot;Temperature: &quot;); 
+  Serial.print(T);
+  Serial.println(&quot; C&quot;); 
+  delay(500);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="14" data-category="Optical &amp; Distance" data-title="photoresistor module" data-desc="photocell is commonly seen in our daily life and is mainly used in intelligent 
+switch, also in common electronic design. to make it easier and more effective, 
+we supply the corresponding modules.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#14</span>
+          <span class="proj-title">Photoresistor Module</span>
+        </div>
+        <span class="cat-tag">Optical &amp; Distance</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/14_bb.png', 'Project 14: Photoresistor Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/14_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/14.jpg', 'Project 14: Photoresistor Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/14.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="Photocell is commonly seen in our daily life and is mainly used in intelligent 
+switch, also in common electronic design. To make it easier and more effective, 
+we supply the corresponding modules.">
+          Photocell is commonly seen in our daily life and is mainly used in intelligent 
+switch, also in common electronic design. To make it easier and more effective, 
+we supply the corresponding modules.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Direct module hookup</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(14)">⚡ View Code</button>
+          <a href="Code/14.Photoresistor_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/14.photoresistor_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_14">
+        <div class="code-header">
+          <span class="code-title">📄 Photoresistor_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_14', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_14"><code>int sensorPin = 2;
+int value = 0;
+int maxValue = 1023; // The maximum value returned by Arduino&#x27;s analogRead function
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  value = analogRead(sensorPin);
+  // Invert ADC value
+  value = maxValue - value;
+  // You can invert it if you want
+  // value = -value + maxValue;
+  
+  Serial.println(value, DEC);
+  delay(50);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="15" data-category="Sensors" data-title="ds18b20_sensor" data-desc="the ds18b20 temperature sensor is a one-wire digital temperature sensor. this means 
+that it just requires one data line (and gnd) to communicate with the arduino.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#15</span>
+          <span class="proj-title">DS18B20_sensor</span>
+        </div>
+        <span class="cat-tag">Sensors</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/15_bb.png', 'Project 15: DS18B20_sensor - Wiring Diagram')">
+          <img src="docs/source/img/connect/15_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/15.jpg', 'Project 15: DS18B20_sensor - Phenomenon')">
+          <img src="docs/source/img/phenomenon/15.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The DS18B20 temperature sensor is a one-wire digital temperature sensor. This means 
+that it just requires one data line (and GND) to communicate with the Arduino.">
+          The DS18B20 temperature sensor is a one-wire digital temperature sensor. This means 
+that it just requires one data line (and GND) to communicate with the Arduino.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• 55°C to +85°C temperature measurement range with good accurac</li><li>• 1-wire interface to save on MCU pins</li><li>• LED to indicate module communications</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(15)">⚡ View Code</button>
+          <a href="Code/15.18B20Temp" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/15.ds18b20_sensor.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_15">
+        <div class="code-header">
+          <span class="code-title">📄 DS18B20_sensor_module_1.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_15', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_15"><code>#include &lt;OneWire.h&gt; 
+
+int DS18S20_Pin = 2; //DS18S20 Signal pin on digital 2
+
+//Temperature chip i/o
+OneWire ds(DS18S20_Pin); // on digital pin 2
+
+void setup(void) {
+ Serial.begin(9600);
+}
+
+void loop(void) {
+ float temperature = getTemp();
+ Serial.println(temperature);
+ 
+ delay(100); //just here to slow down the output so it is easier to read
+ 
+}
+
+
+float getTemp(){
+ //returns the temperature from one DS18S20 in DEG Celsius
+
+ byte data[12];
+ byte addr[8];
+
+ if ( !ds.search(addr)) {
+   //no more sensors on chain, reset search
+   ds.reset_search();
+   return -1000;
+ }
+
+ if ( OneWire::crc8( addr, 7) != addr[7]) {
+   Serial.println(&quot;CRC is not valid!&quot;);
+   return -1000;
+ }
+
+ if ( addr[0] != 0x10 &amp;&amp; addr[0] != 0x28) {
+   Serial.print(&quot;Device is not recognized&quot;);
+   return -1000;
+ }
+
+ ds.reset();
+ ds.select(addr);
+ ds.write(0x44,1); // start conversion, with parasite power on at the end
+
+ byte present = ds.reset();
+ ds.select(addr);  
+ ds.write(0xBE); // Read Scratchpad
+
+ 
+ for (int i = 0; i &lt; 9; i++) { // we need 9 bytes
+  data[i] = ds.read();
+ }
+ 
+ ds.reset_search();
+ 
+ byte MSB = data[1];
+ byte LSB = data[0];
+
+ float tempRead = ((MSB &lt;&lt; 8) | LSB); //using two&#x27;s compliment
+ float TemperatureSum = tempRead / 16;
+ 
+ return TemperatureSum;
+ 
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="16" data-category="Motion / Vibration" data-title="shock sensor" data-desc="the ky-002 vibration switch module detects shaking and knocking. when the module 
+is moved, a spring mechanism will close the circuit sending a short high signal.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#16</span>
+          <span class="proj-title">Shock Sensor</span>
+        </div>
+        <span class="cat-tag">Motion / Vibration</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/16_bb.png', 'Project 16: Shock Sensor - Wiring Diagram')">
+          <img src="docs/source/img/connect/16_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/16.jpg', 'Project 16: Shock Sensor - Phenomenon')">
+          <img src="docs/source/img/phenomenon/16.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-002 Vibration Switch Module detects shaking and knocking. When the module 
+is moved, a spring mechanism will close the circuit sending a short high signal.">
+          The KY-002 Vibration Switch Module detects shaking and knocking. When the module 
+is moved, a spring mechanism will close the circuit sending a short high signal.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	5V</li><li>• Board Dimensions	18.5mm x 15mm [0.728in x 0.591in]</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(16)">⚡ View Code</button>
+          <a href="Code/16.Shock" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/16.shock_sensor.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_16">
+        <div class="code-header">
+          <span class="code-title">📄 shock.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_16', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_16"><code>int Led = 13; // define the LED Pin
+int shock = 3; // define the sensor Pin 
+int val; // define a numeric variable val 
+
+void setup () {
+	pinMode (Led, OUTPUT); // LED pin as output  
+	pinMode (shock, INPUT); // input from KY-002 sensor
+} 
+
+void loop () {
+	val = digitalRead (shock); // read the value from KY-002
+	if (val == HIGH ) {// when sensor detects shock, LED flashes  
+		digitalWrite(Led, LOW);
+	} else {
+		digitalWrite (Led, HIGH);
+	}
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="17" data-category="Sensors" data-title="pulse rate monitor" data-desc="this module makes use of a ultra-clear infrared led and a phototransistor to 
+detect the pulse in your finger. the red led will flash in time with your pulse.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#17</span>
+          <span class="proj-title">Pulse Rate Monitor</span>
+        </div>
+        <span class="cat-tag">Sensors</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/17_bb.png', 'Project 17: Pulse Rate Monitor - Wiring Diagram')">
+          <img src="docs/source/img/connect/17_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/17.jpg', 'Project 17: Pulse Rate Monitor - Phenomenon')">
+          <img src="docs/source/img/phenomenon/17.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This module makes use of a ultra-clear infrared LED and a phototransistor to 
+detect the pulse in your finger. The red LED will flash in time with your pulse.">
+          This module makes use of a ultra-clear infrared LED and a phototransistor to 
+detect the pulse in your finger. The red LED will flash in time with your pulse.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Connect</li><li>• .. image:: /img/connect/17_bb.png</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(17)">⚡ View Code</button>
+          <a href="Code/17.Pulse_Rate_Monitor" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/17.pulse_rate_monitor.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_17">
+        <div class="code-header">
+          <span class="code-title">📄 17.Pulse_Rate_Monitor.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_17', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_17"><code>int ledPin = 13;
+int sensorPin = 0;
+double alpha = 0.75;
+int period = 20;
+double change = 0.0;
+void setup()
+{
+pinMode(ledPin, OUTPUT);
+Serial.begin(115200);
+}
+void loop()
+{
+static double oldValue = 0;
+static double oldChange = 0;
+int rawValue = analogRead(sensorPin);
+double value = alpha * oldValue + (1 - alpha) * rawValue;
+Serial.print(rawValue);
+Serial.print(&quot;,&quot;);
+Serial.println(value);
+oldValue = value;
+delay(period);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="18" data-category="Controls &amp; Switches" data-title="button" data-desc="this is a basic button module. you can simply plug it into an io shield to have 
+your first try of arduino.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#18</span>
+          <span class="proj-title">Button</span>
+        </div>
+        <span class="cat-tag">Controls &amp; Switches</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/18_bb.png', 'Project 18: Button - Wiring Diagram')">
+          <img src="docs/source/img/connect/18_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/18.jpg', 'Project 18: Button - Phenomenon')">
+          <img src="docs/source/img/phenomenon/18.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This is a basic button module. You can simply plug it into an IO shield to have 
+your first try of Arduino.">
+          This is a basic button module. You can simply plug it into an IO shield to have 
+your first try of Arduino.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Supply Voltage: 3.3V to 5V</li><li>• Interface: Digital</li><li>• Dimensions: 30*20mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(18)">⚡ View Code</button>
+          <a href="Code/18.Button" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/18.button.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_18">
+        <div class="code-header">
+          <span class="code-title">📄 18.Button.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_18', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_18"><code>int led = 13; //Define the LED pin
+int buttonpin = 3; //Define the push button pin  
+int val; //Define a numeric variable
+int ledState = LOW; //LED status variable, the initial value is off
+
+void setup() {
+  pinMode(led,OUTPUT);
+  pinMode(buttonpin,INPUT);
+  digitalWrite(led, ledState); //Set the initial LED state according to ledState
+}
+
+void loop() {
+  val = digitalRead(buttonpin); // Read button status
+  if(val==LOW) // If the button is pressed
+  {
+    ledState = HIGH; // Set ledState to HIGH(on)
+  }
+  else
+  {
+    ledState = LOW; // Set ledState to LOW
+  }
+  digitalWrite(led, ledState);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="19" data-category="Controls &amp; Switches" data-title="rotary encoder" data-desc="the rotary encoder can count the pulse outputting times during the process of 
+rotation in positive and reverse direction.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#19</span>
+          <span class="proj-title">Rotary Encoder</span>
+        </div>
+        <span class="cat-tag">Controls &amp; Switches</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/19_bb.png', 'Project 19: Rotary Encoder - Wiring Diagram')">
+          <img src="docs/source/img/connect/19_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/19.jpg', 'Project 19: Rotary Encoder - Phenomenon')">
+          <img src="docs/source/img/phenomenon/19.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The rotary encoder can count the pulse outputting times during the process of 
+rotation in positive and reverse direction.">
+          The rotary encoder can count the pulse outputting times during the process of 
+rotation in positive and reverse direction.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Power Supply: 5V</li><li>• Interface: Digital</li><li>• Size: 30*20mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(19)">⚡ View Code</button>
+          <a href="Code/19.Rotary_Encoder" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/19.rotary_encoder.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_19">
+        <div class="code-header">
+          <span class="code-title">📄 19.Rotary_Encoder.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_19', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_19"><code>#define SERIAL_BAUDRATE 115200
+#define CLK_PIN 2 // define connection pin
+#define DT_PIN 3
+#define SW_PIN 4
+
+#define interruptA 0 // UNO pin2 is interrupt 0，refer to the official website of other board
+
+volatile long count = 0;
+unsigned long t = 0;
+
+void setup() {
+  Serial.begin(SERIAL_BAUDRATE);
+  // when the state is down, the rotary encoder is rotated.
+  attachInterrupt(interruptA, rotaryEncoderChanged, FALLING);
+  pinMode(CLK_PIN, INPUT_PULLUP); // Input mode and enable internal pull up resistor
+  pinMode(DT_PIN, INPUT_PULLUP); 
+  pinMode(SW_PIN, INPUT_PULLUP); 
+}
+void loop() {
+  if(digitalRead(SW_PIN) == LOW){ // Press the switch, return to zero
+     count = 0;  
+     Serial.println(&quot;count reset to 0&quot;);
+     delay(300);
+  }
+}
+void rotaryEncoderChanged(){ // when CLK_PIN is FALLING
+  unsigned long temp = millis();
+  if(temp - t &lt; 200) // remove bounce
+    return;
+  t = temp;
+  
+  // DT_PIN state represents a forward or reverse.
+  count += digitalRead(DT_PIN) == HIGH ? 1 : -1;
+  Serial.println(count);
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="20" data-category="Controls &amp; Switches" data-title="joystick" data-desc="lots of robot projects need joystick.   this module provides an affordable solution.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#20</span>
+          <span class="proj-title">Joystick</span>
+        </div>
+        <span class="cat-tag">Controls &amp; Switches</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/20_bb.png', 'Project 20: Joystick - Wiring Diagram')">
+          <img src="docs/source/img/connect/20_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/20.jpg', 'Project 20: Joystick - Phenomenon')">
+          <img src="docs/source/img/phenomenon/20.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="Lots of robot projects need joystick.   This module provides an affordable solution.">
+          Lots of robot projects need joystick.   This module provides an affordable solution.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Supply Voltage: 3.3V to 5V</li><li>• Interface: Analog x2, Digital x1</li><li>• Size: 40*28mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(20)">⚡ View Code</button>
+          <a href="Code/20.Joystick" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/20.Joystick.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_20">
+        <div class="code-header">
+          <span class="code-title">📄 20.Joystick.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_20', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_20"><code>int value = 0;
+
+void setup() {
+  pinMode(3, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  value = analogRead(0);
+  Serial.print(&quot;X:&quot;);
+  Serial.print(value, DEC);
+
+  value = analogRead(1);
+  Serial.print(&quot; | Y:&quot;);
+  Serial.println(value, DEC);
+
+  delay(100);
+}
+
+
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="21" data-category="Motion / Vibration" data-title="tilt switch" data-desc="tilt sensor is a digital tilt switch. it can be used as a simple tilt switch.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#21</span>
+          <span class="proj-title">Tilt switch</span>
+        </div>
+        <span class="cat-tag">Motion / Vibration</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/21_bb.png', 'Project 21: Tilt switch - Wiring Diagram')">
+          <img src="docs/source/img/connect/21_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/21.jpg', 'Project 21: Tilt switch - Phenomenon')">
+          <img src="docs/source/img/phenomenon/21.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="Tilt Sensor is a digital tilt switch. It can be used as a simple tilt switch.">
+          Tilt Sensor is a digital tilt switch. It can be used as a simple tilt switch.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Supply Voltage: 3.3V to 5V</li><li>• Interface: Digital</li><li>• Size: 30*20mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(21)">⚡ View Code</button>
+          <a href="Code/21.Tilt_Switch" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/21.tilt_switch.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_21">
+        <div class="code-header">
+          <span class="code-title">📄 21.Tilt_Switch.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_21', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_21"><code>int ledPin = 13;                // Connect LED to pin 13
+int switcher = 3;                 // Connect Tilt sensor to Pin3
+ 
+void setup()
+{
+  pinMode(ledPin, OUTPUT);      // Set digital pin 13 to output mode
+  pinMode(switcher, INPUT);       // Set digital pin 3 to input mode
+}
+void loop()
+{
+     
+   if(digitalRead(switcher)==LOW) //Read sensor value
+     { 
+        digitalWrite(ledPin, HIGH);   // Turn on LED when the sensor is tilted
+     }
+   else
+     {
+        digitalWrite(ledPin, LOW);    // Turn off LED when the sensor is not triggered
+     }
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="22" data-category="Magnetic" data-title="ky-035 hall sensor" data-desc="this is a magnetic induction sensor. it can sense the magnetic materials within 
+a detection range up to 3cm.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#22</span>
+          <span class="proj-title">KY-035 Hall Sensor</span>
+        </div>
+        <span class="cat-tag">Magnetic</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/22_bb.png', 'Project 22: KY-035 Hall Sensor - Wiring Diagram')">
+          <img src="docs/source/img/connect/22_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/22.jpg', 'Project 22: KY-035 Hall Sensor - Phenomenon')">
+          <img src="docs/source/img/phenomenon/22.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This is a magnetic induction sensor. It can sense the magnetic materials within 
+a detection range up to 3cm.">
+          This is a magnetic induction sensor. It can sense the magnetic materials within 
+a detection range up to 3cm.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Sensing magnetic materials</li><li>• Detection range: up to 3cm</li><li>• Output: digital on/off</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(22)">⚡ View Code</button>
+          <a href="Code/22.Hall_Magnetic_Sensor" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/22.ky-035_hall_sensor.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_22">
+        <div class="code-header">
+          <span class="code-title">📄 22.Hall_Magnetic_Sensor.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_22', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_22"><code>int ledPin = 13;                // choose the pin for the LED
+int inputPin = 3;               // Connect sensor to input pin 3 
+int val = 0;                    // variable for reading the pin status
+ 
+void setup() {
+  pinMode(ledPin, OUTPUT);      // declare LED as output
+  pinMode(inputPin, INPUT);     // declare push button as input
+}
+ 
+void loop(){
+  val = digitalRead(inputPin);  // read input value
+  if (val == HIGH) {            // check if the input is HIGH
+    digitalWrite(ledPin, LOW);  // turn LED OFF
+  } else {
+    digitalWrite(ledPin, HIGH); // turn LED ON
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="23" data-category="Motion / Vibration" data-title="tap module" data-desc="this module is a knock sensor. when you knock it, it can send a momentary signal.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#23</span>
+          <span class="proj-title">TAP Module</span>
+        </div>
+        <span class="cat-tag">Motion / Vibration</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/23_bb.png', 'Project 23: TAP Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/23_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/23.jpg', 'Project 23: TAP Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/23.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This module is a knock sensor. When you knock it, it can send a momentary signal.">
+          This module is a knock sensor. When you knock it, it can send a momentary signal.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Working voltage: 5V</li><li>• Size: 30*20mm</li><li>• Weight: 3g</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(23)">⚡ View Code</button>
+          <a href="Code/23.TAP_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/23.tap_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_23">
+        <div class="code-header">
+          <span class="code-title">📄 23.TAP_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_23', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_23"><code>    int Led=13;//define LED interface
+    int Shock=3;//define knock sensor interface
+    int val;//define digital variable val
+    void setup()
+    {
+    pinMode(Led,OUTPUT);//define LED to be output interface
+    pinMode(Shock,INPUT);//define knock sensor to be output interface
+    }
+    void loop()
+    {
+    val=digitalRead(Shock);//read the value of interface3 and evaluate it to val
+    if(val==HIGH)//when the knock sensor detect a signal, LED will be flashing
+    {
+    digitalWrite(Led,LOW);
+    }
+    else
+    {
+    digitalWrite(Led,HIGH);
+    }
+    }</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="24" data-category="Magnetic" data-title="ky-003 hall sensor" data-desc="the ky-003 hall magnetic sensor module is a switch that reacts to the presence 
+of a magnetic field, turning itself on or off. compatible with popular microcont
+rolers like arduino, raspberry pi and esp32.this module offers a digital output.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#24</span>
+          <span class="proj-title">KY-003 Hall Sensor</span>
+        </div>
+        <span class="cat-tag">Magnetic</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/24_bb.png', 'Project 24: KY-003 Hall Sensor - Wiring Diagram')">
+          <img src="docs/source/img/connect/24_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/24.jpg', 'Project 24: KY-003 Hall Sensor - Phenomenon')">
+          <img src="docs/source/img/phenomenon/24.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-003 Hall Magnetic Sensor module is a switch that reacts to the presence 
+of a magnetic field, turning itself on or off. Compatible with popular microcont
+rolers like Arduino, Raspberry Pi and ESP32.This module offers a digital output.">
+          The KY-003 Hall Magnetic Sensor module is a switch that reacts to the presence 
+of a magnetic field, turning itself on or off. Compatible with popular microcont
+rolers like Arduino, Raspberry Pi and ESP32.This module offers a digital output.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	4.5V to 24V</li><li>• Operating Temperature Range	-40°C to 85°C</li><li>• Board Dimensions	18.5mm x 15mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(24)">⚡ View Code</button>
+          <a href="Code/24.Hall_Magnetic_Sensor" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/24.ky-003_hall_sensor.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_24">
+        <div class="code-header">
+          <span class="code-title">📄 24.Hall_Magnetic_Sensor.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_24', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_24"><code>int led = 13;//LED pin
+int sensor = 3; //sensor pin
+int val; //numeric variable
+
+void setup()
+{
+	pinMode(led, OUTPUT); //set LED pin as output
+	pinMode(sensor, INPUT); //set sensor pin as input
+}
+
+void loop()
+{
+	val = digitalRead(sensor); //Read the sensor
+	if(val == LOW) //when magnetic field is detected, turn led on
+	{
+		digitalWrite(led, HIGH);
+	}
+	else
+	{
+		digitalWrite(led, LOW);
+	}
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="25" data-category="Motion / Vibration" data-title="mercury tilt switch" data-desc="">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#25</span>
+          <span class="proj-title">Mercury Tilt Switch</span>
+        </div>
+        <span class="cat-tag">Motion / Vibration</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/25_bb.png', 'Project 25: Mercury Tilt Switch - Wiring Diagram')">
+          <img src="docs/source/img/connect/25_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/25.jpg', 'Project 25: Mercury Tilt Switch - Phenomenon')">
+          <img src="docs/source/img/phenomenon/25.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="">
+          
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	3.3V ~ 5.5V</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(25)">⚡ View Code</button>
+          <a href="Code/25.Mercury_Tilt_Switch" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/25.mercury_tilt_switch.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_25">
+        <div class="code-header">
+          <span class="code-title">📄 25.Mercury_Tilt_Switch.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_25', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_25"><code>int led_pin = 13; // Define the LED interface
+int switch_pin = 3; // Definition of mercury tilt switch sensor interface
+int val; // Defines a numeric variable
+
+void setup()
+{
+	pinMode(led_pin, OUTPUT);
+	pinMode(switch_pin, INPUT);
+}
+
+void loop()
+{
+	val = digitalRead(switch_pin); // check mercury switch state
+	if(val == HIGH)
+	{
+		digitalWrite(led_pin, HIGH);
+	}
+	else
+	{
+		digitalWrite(led_pin, LOW);
+	}
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="26" data-category="Magnetic" data-title="reed switch" data-desc="the ky-021 magnetic reed switch module is a switch that is normally open and gets 
+closed when exposed to a magnetic field, sending a digital signal. commonly used 
+in mechanical systems as proximity sensors.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#26</span>
+          <span class="proj-title">Reed Switch</span>
+        </div>
+        <span class="cat-tag">Magnetic</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/26_bb.png', 'Project 26: Reed Switch - Wiring Diagram')">
+          <img src="docs/source/img/connect/26_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/26.jpg', 'Project 26: Reed Switch - Phenomenon')">
+          <img src="docs/source/img/phenomenon/26.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-021 Magnetic Reed Switch module is a switch that is normally open and gets 
+closed when exposed to a magnetic field, sending a digital signal. Commonly used 
+in mechanical systems as proximity sensors.">
+          The KY-021 Magnetic Reed Switch module is a switch that is normally open and gets 
+closed when exposed to a magnetic field, sending a digital signal. Commonly used 
+in mechanical systems as proximity sensors.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	3.3V ~ 5V</li><li>• Output Type	Digital</li><li>• Board Size	18.5mm x 15mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(26)">⚡ View Code</button>
+          <a href="Code/26.Reed_Switch" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/26.reed_switch.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_26">
+        <div class="code-header">
+          <span class="code-title">📄 26.Reed_Switch.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_26', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_26"><code>int Led = 13;      //define LED interface
+int buttonpin = 3; //define magnetic ring sensor interface
+int val;           //define digital variable val
+void setup()
+{
+    pinMode(Led, OUTPUT);      //define LED as output interface
+    pinMode(buttonpin, INPUT); //define magnetic ring sensor as output interface
+}
+void loop()
+{
+    val = digitalRead(buttonpin); // read and assign the value of digital interface 3 to val
+    if (val == LOW)              //When a signal is detected by magnetic ring sensor, LED will flash
+    {
+    digitalWrite(Led, HIGH);
+    }
+    else
+    {
+    digitalWrite(Led, LOW);
+    }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="27" data-category="Optical &amp; Distance" data-title="photo interrupter module" data-desc="the ky-010 photo interrupter module is a switch that will trigger a signal when light between the sensor’s gap is blocked.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#27</span>
+          <span class="proj-title">Photo Interrupter Module</span>
+        </div>
+        <span class="cat-tag">Optical &amp; Distance</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/27_bb.png', 'Project 27: Photo Interrupter Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/27_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/27.jpg', 'Project 27: Photo Interrupter Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/27.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-010 Photo Interrupter module is a switch that will trigger a signal when light between the sensor’s gap is blocked.">
+          The KY-010 Photo Interrupter module is a switch that will trigger a signal when light between the sensor’s gap is blocked.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	3.3V ~ 5V</li><li>• Board Dimensions	 18.5mm x 15mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(27)">⚡ View Code</button>
+          <a href="Code/27.Photo_Interrupter_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/27.photo_interrupter_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_27">
+        <div class="code-header">
+          <span class="code-title">📄 27.Photo_Interrupter_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_27', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_27"><code>int Led = 13; // define LED pin
+int buttonpin = 3; // define photo interrupter signal pin
+int val; //define a numeric variable
+
+void setup()
+{
+	pinMode(Led, OUTPUT); // LED pin as output
+	pinMode(buttonpin, INPUT); //photo interrupter pin as input
+}
+
+void loop()
+{
+	val=digitalRead(buttonpin); //read the value of the sensor 
+	if(val == HIGH) // turn on LED when sensor is blocked 
+	{
+		digitalWrite(Led,HIGH);
+	}
+	else
+	{
+		digitalWrite(Led,LOW);
+	}
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="28" data-category="Optical &amp; Distance" data-title="line tracking sensor module" data-desc="the ky-033 line tracking module is an infrared sensor that detects whether the 
+surface in front of it is reflective or opaque. sensitivity to ambient light can 
+be adjusted using the knob to achieve a fairly accurate reading.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#28</span>
+          <span class="proj-title">Line Tracking Sensor Module</span>
+        </div>
+        <span class="cat-tag">Optical &amp; Distance</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/28_bb.png', 'Project 28: Line Tracking Sensor Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/28_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/28.jpg', 'Project 28: Line Tracking Sensor Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/28.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-033 Line Tracking module is an infrared sensor that detects whether the 
+surface in front of it is reflective or opaque. Sensitivity to ambient light can 
+be adjusted using the knob to achieve a fairly accurate reading.">
+          The KY-033 Line Tracking module is an infrared sensor that detects whether the 
+surface in front of it is reflective or opaque. Sensitivity to ambient light can 
+be adjusted using the knob to achieve a fairly accurate reading.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Working voltage	3.3V — 5.5V DC</li><li>• Output signal	TTL level (high level if line detected, low if no line detected)</li><li>• Board Size	1cm x 4.2cm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(28)">⚡ View Code</button>
+          <a href="Code/28.Line_Tracking_Sensor_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/28.line_tracking_sensor_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_28">
+        <div class="code-header">
+          <span class="code-title">📄 28.Line_Tracking_Sensor_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_28', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_28"><code>int sensorPin = 7;  // line detection sensor interface
+int val;            // variable to store sensor reading
+
+void setup() {
+  pinMode(sensorPin,INPUT);  // define sensor as input  
+  Serial.begin(9600);     // initialize serial communication with PC
+}
+
+void loop() {
+  val = digitalRead(sensorPin); // read value from sensor
+  
+  if (val == HIGH) { 
+    Serial.println(&quot;Line detected&quot;); 
+  } else { 
+    Serial.println(&quot;Line NOT detected&quot;); 
+  }
+
+  delay(500);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="29" data-category="Optical &amp; Distance" data-title="infrared obstacle avoidance sensor module" data-desc="the module has a pair of infrared leds, an emitter, and a receiver. the emitting">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#29</span>
+          <span class="proj-title">Infrared Obstacle Avoidance Sensor Module</span>
+        </div>
+        <span class="cat-tag">Optical &amp; Distance</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/29_bb.png', 'Project 29: Infrared Obstacle Avoidance Sensor Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/29_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/29.jpg', 'Project 29: Infrared Obstacle Avoidance Sensor Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/29.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The module has a pair of infrared LEDs, an emitter, and a receiver. The emitting">
+          The module has a pair of infrared LEDs, an emitter, and a receiver. The emitting
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Working voltage	3.3V – 5V DC</li><li>• Working current	≥ 20mA</li><li>• Working temperature	-10°C – 50°C</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(29)">⚡ View Code</button>
+          <a href="Code/29.Infrared_Obstacle_Avoidance_Sensor_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/29.infrared_obstacle_avoidance_sensor_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_29">
+        <div class="code-header">
+          <span class="code-title">📄 29.Infrared_Obstacle_Avoidance_Sensor_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_29', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_29"><code>int ledPin = 13;      // LED pin on arduino
+int detectorPin = 3;  // obstacle avoidance sensor interface
+int val;              // variable to store result
+//int enablePin = 2;  // sensor enable interface (EN)
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);  // Define LED as output interface
+  pinMode(detectorPin, INPUT);  // Define obstacle avoidance sensor as input interface
+  
+  // [uncomment and remove jumper on module to use enable pin (EN)]
+  //pinMode(enablePin, OUTPUT);
+  //digitalWrite(enablePin, HIGH);  // Enable sensor
+}
+
+void loop()
+{
+  val = digitalRead(detectorPin); // Read value from sensor
+  if(val == LOW) // When the sensor detects an obstacle, the LED on the Arduino lights up
+  {
+    digitalWrite(ledPin, HIGH);
+  }
+  else
+  {
+    digitalWrite(ledPin, LOW);
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="30" data-category="Controls &amp; Switches" data-title="relay" data-desc="the ky-019 consist of a 1mω resistor, a led, a 1n4007 rectifier diode and a 5vdc 
+relay capable of handling up to 250vac and 10a.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#30</span>
+          <span class="proj-title">Relay</span>
+        </div>
+        <span class="cat-tag">Controls &amp; Switches</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/30_bb.png', 'Project 30: Relay - Wiring Diagram')">
+          <img src="docs/source/img/connect/30_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/30.jpg', 'Project 30: Relay - Phenomenon')">
+          <img src="docs/source/img/phenomenon/30.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-019 consist of a 1MΩ resistor, a LED, a 1N4007 rectifier diode and a 5VDC 
+relay capable of handling up to 250VAC and 10A.">
+          The KY-019 consist of a 1MΩ resistor, a LED, a 1N4007 rectifier diode and a 5VDC 
+relay capable of handling up to 250VAC and 10A.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• TTL Control Signal	5VDC to 12VDC (some boards may work with 3.3)</li><li>• Maximum AC	10A 250VAC</li><li>• Maximum DC	10A 30VDC</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(30)">⚡ View Code</button>
+          <a href="Code/30.Relay" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/30.relay.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_30">
+        <div class="code-header">
+          <span class="code-title">📄 30.Relay.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_30', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_30"><code> int Relay = 8;
+  void setup()
+{
+  pinMode(13, OUTPUT);         //Set Pin13 as output
+  digitalWrite(13, HIGH);     //Set Pin13 High
+  pinMode(Relay, OUTPUT);     //Set Pin3 as output
+}
+void loop()
+{
+          digitalWrite(Relay, HIGH);   //Turn off relay
+          delay(1000);
+          digitalWrite(Relay, LOW);    //Turn on relay
+          delay(1000);
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="31" data-category="Power Supply" data-title="breadboard power supply module" data-desc="the 3.3v/5v output mb102 breadboard power supply module is an easy to use, most 
+useful breadboard component that can be added with any breadboard related projects 
+where 5v, 3.3v or both power requirements are required. its ease of use allows users 
+to connect any dc power supply unit that has 6.5-12 vdc power output from a barrel jack.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#31</span>
+          <span class="proj-title">Breadboard Power Supply Module</span>
+        </div>
+        <span class="cat-tag">Power Supply</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('', 'Project 31: Breadboard Power Supply Module - Wiring Diagram')">
+          <div class="no-img">No wiring diagram needed</div>
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/31-1.jpg', 'Project 31: Breadboard Power Supply Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/31-1.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The 3.3V/5V output MB102 Breadboard power supply module is an easy to use, most 
+useful breadboard component that can be added with any breadboard related projects 
+where 5V, 3.3V or both power requirements are required. Its ease of use allows users 
+to connect any DC power supply unit that has 6.5-12 VDC power output from a barrel jack.">
+          The 3.3V/5V output MB102 Breadboard power supply module is an easy to use, most 
+useful breadboard component that can be added with any breadboard related projects 
+where 5V, 3.3V or both power requirements are required. Its ease of use allows users 
+to connect any DC power supply unit that has 6.5-12 VDC power output from a barrel jack.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Input voltage: 6.5 - 12V</li><li>• Two Independent Channel</li><li>• Output voltage: 5V, 3.3V (adjustable via jumpers. 0V, 3.3V, and 5V configuration)</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <span class="btn btn-outline btn-sm" style="opacity:0.6;cursor:default;">⚙️ Hardware Only</span>
+          <a href="Code/31.Breadboard_Power_Supply_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/31.breadboard_power_supply_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="32" data-category="Magnetic" data-title="linear magnetic hall module" data-desc="the ky-024 linear magnetic hall sensor reacts in the presence of a magnetic field.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#32</span>
+          <span class="proj-title">Linear Magnetic Hall Module</span>
+        </div>
+        <span class="cat-tag">Magnetic</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/32_bb.png', 'Project 32: Linear Magnetic Hall Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/32_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/32.jpg', 'Project 32: Linear Magnetic Hall Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/32.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-024 Linear magnetic Hall sensor reacts in the presence of a magnetic field.">
+          The KY-024 Linear magnetic Hall sensor reacts in the presence of a magnetic field.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	2.7V to 6.5V</li><li>• Sensitivity	1.0 mV/G min., 1.4 mV/G typ., 1.75 mV/G max.</li><li>• Board Dimensions	1.5cm x 3.6cm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(32)">⚡ View Code</button>
+          <a href="Code/32.Linear_Magnetic_Hall_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/32.linear_magnetic_hall_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_32">
+        <div class="code-header">
+          <span class="code-title">📄 32.Linear_Magnetic_Hall_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_32', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_32"><code>int led = 13 ; // LED on arduino
+int digitalPin = 3; // linear Hall magnetic sensor digital interface
+int analogPin = A0; // linear Hall magnetic sensor analog interface
+int digitalVal ; // digital readings
+int analogVal; // analog readings
+
+void setup ()
+{
+  pinMode (led, OUTPUT); 
+  pinMode (digitalPin, INPUT); 
+  //pinMode(analogPin, INPUT); 
+  Serial.begin(9600);
+}
+
+void loop ()
+{
+  // Read the digital interface
+  digitalVal = digitalRead(digitalPin) ; 
+  if (digitalVal == HIGH) // When magnetic field is present, Arduino LED is on
+  {
+    digitalWrite (led, HIGH);
+  }
+  else
+  {
+    digitalWrite (led, LOW);
+  }
+  
+  // Read the analog interface
+  analogVal = analogRead(analogPin);
+  Serial.println(analogVal); // print analog value
+
+  delay(100);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="33" data-category="Controls &amp; Switches" data-title="metal touch sensor module" data-desc="the ky-036 metal touch sensor module is an analog/digital sensor that uses a 
+transistor to detect changes in electrical conductivity. when the transistor is 
+touched with a finger, the conductivity changes and the module emits a digital 
+and analog signal.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#33</span>
+          <span class="proj-title">Metal Touch Sensor Module</span>
+        </div>
+        <span class="cat-tag">Controls &amp; Switches</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/33_bb.png', 'Project 33: Metal Touch Sensor Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/33_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/33.jpg', 'Project 33: Metal Touch Sensor Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/33.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-036 Metal Touch Sensor Module is an analog/digital sensor that uses a 
+transistor to detect changes in electrical conductivity. When the transistor is 
+touched with a finger, the conductivity changes and the module emits a digital 
+and analog signal.">
+          The KY-036 Metal Touch Sensor Module is an analog/digital sensor that uses a 
+transistor to detect changes in electrical conductivity. When the transistor is 
+touched with a finger, the conductivity changes and the module emits a digital 
+and analog signal.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating voltage	3.3V ~ 5.5V</li><li>• Board Dimensions	15mm x 36mm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(33)">⚡ View Code</button>
+          <a href="Code/33.Metal_Touch_Sensor_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/33.metal_touch_sensor_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_33">
+        <div class="code-header">
+          <span class="code-title">📄 33.Metal_Touch_Sensor_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_33', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_33"><code>int digitalPin = 7;   // KY-036 digital interface
+int analogPin = A0;   // KY-036 analog interface
+int ledPin = 13;      // Arduino LED pin
+int digitalVal;       // digital readings
+int analogVal;        // analog readings
+
+void setup()
+{
+  pinMode(digitalPin,INPUT); 
+  pinMode(analogPin, INPUT);
+  pinMode(ledPin,OUTPUT);      
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  // Read the digital inteface
+  digitalVal = digitalRead(digitalPin); 
+  
+  if(digitalVal == HIGH) 
+  {
+    digitalWrite(ledPin, HIGH); // Turn ON Arduino&#x27;s LED
+  }
+  else
+  {
+    digitalWrite(ledPin, LOW);  // Turn OFF Arduino&#x27;s LED
+  }
+
+  // Read analog interface
+  analogVal = analogRead(analogPin);
+  Serial.println(analogVal);  // Print analog value to serial
+
+  delay(100);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="34" data-category="Optical &amp; Distance" data-title="flame sensor module" data-desc="the ky-026 flame sensor module detects infrared light emitted by fire. this 
+module has both digital and analog outputs and a potentiometer to adjust the 
+sensitivity. commonly used in fire detection systems.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#34</span>
+          <span class="proj-title">Flame Sensor Module</span>
+        </div>
+        <span class="cat-tag">Optical &amp; Distance</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/34_bb.png', 'Project 34: Flame Sensor Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/34_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/34.jpg', 'Project 34: Flame Sensor Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/34.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-026 Flame Sensor module detects infrared light emitted by fire. This 
+module has both digital and analog outputs and a potentiometer to adjust the 
+sensitivity. Commonly used in fire detection systems.">
+          The KY-026 Flame Sensor module detects infrared light emitted by fire. This 
+module has both digital and analog outputs and a potentiometer to adjust the 
+sensitivity. Commonly used in fire detection systems.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	3.3V ~ 5.5V</li><li>• Infrared Wavelength Detection	760nm ~ 1100nm</li><li>• Sensor Detection Angle	60°</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(34)">⚡ View Code</button>
+          <a href="Code/34.Flame_Sensor_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/34.flame_sensor_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_34">
+        <div class="code-header">
+          <span class="code-title">📄 34.Flame_Sensor_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_34', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_34"><code>int led = 13; // define the LED pin
+int digitalPin = 2; // KY-026 digital interface
+int analogPin = A0; // KY-026 analog interface
+int digitalVal; // digital readings
+int analogVal; //analog readings
+
+void setup()
+{
+  pinMode(led, OUTPUT);
+  pinMode(digitalPin, INPUT);
+  //pinMode(analogPin, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  // Read the digital interface
+  digitalVal = digitalRead(digitalPin); 
+  if(digitalVal == HIGH) // if flame is detected
+  {
+    digitalWrite(led, HIGH); // turn ON Arduino&#x27;s LED
+  }
+  else
+  {
+    digitalWrite(led, LOW); // turn OFF Arduino&#x27;s LED
+  }
+
+  // Read the analog interface
+  analogVal = analogRead(analogPin); 
+  Serial.println(analogVal); // print analog value to serial
+
+  delay(100);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="35" data-category="Environmental" data-title="digital temperature sensor module" data-desc="the ky-028 digital temperature sensor measures temperature changes based on thermistor 
+resistance. this module has both digital and analog outputs, there’s a potentiometer to 
+djust the detection threshold on the digital interface.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#35</span>
+          <span class="proj-title">Digital Temperature Sensor Module</span>
+        </div>
+        <span class="cat-tag">Environmental</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/35_bb.png', 'Project 35: Digital Temperature Sensor Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/35_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/35.jpg', 'Project 35: Digital Temperature Sensor Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/35.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-028 Digital Temperature Sensor measures temperature changes based on thermistor 
+resistance. This module has both digital and analog outputs, there’s a potentiometer to 
+djust the detection threshold on the digital interface.">
+          The KY-028 Digital Temperature Sensor measures temperature changes based on thermistor 
+resistance. This module has both digital and analog outputs, there’s a potentiometer to 
+djust the detection threshold on the digital interface.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating Voltage	3.3V ~ 5.5V</li><li>• Temperature Measurement Range	-55°C to 125°C</li><li>• Measurement Accuracy	±0.5°C</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(35)">⚡ View Code</button>
+          <a href="Code/35.Digital_Temperature_Sensor_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/35.digital_temperature_sensor_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_35">
+        <div class="code-header">
+          <span class="code-title">📄 35.Digital_Temperature_Sensor_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_35', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_35"><code>int led = 13; // define the LED pin
+int digitalPin = 2; // KY-028 digital interface
+int analogPin = A0; // KY-028 analog interface
+int digitalVal; // digital readings
+int analogVal; //analog readings
+
+void setup()
+{
+  pinMode(led, OUTPUT);
+  pinMode(digitalPin, INPUT);
+  //pinMode(analogPin, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  // Read the digital interface
+  digitalVal = digitalRead(digitalPin); 
+  if(digitalVal == HIGH) // if temperature threshold reached
+  {
+    digitalWrite(led, HIGH); // turn ON Arduino&#x27;s LED
+  }
+  else
+  {
+    digitalWrite(led, LOW); // turn OFF Arduino&#x27;s LED
+  }
+
+  // Read the analog interface
+  analogVal = analogRead(analogPin); 
+  Serial.println(analogVal); // print analog value to serial
+
+  delay(100);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="36" data-category="Magnetic" data-title="reed switch module" data-desc="the ky-025 reed switch module is a small electrical switch operated by an applied 
+magnetic field, commonly used as proximity sensor.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#36</span>
+          <span class="proj-title">Reed Switch Module</span>
+        </div>
+        <span class="cat-tag">Magnetic</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/36_bb.png', 'Project 36: Reed Switch Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/36_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/36.jpg', 'Project 36: Reed Switch Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/36.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-025 Reed Switch Module is a small electrical switch operated by an applied 
+magnetic field, commonly used as proximity sensor.">
+          The KY-025 Reed Switch Module is a small electrical switch operated by an applied 
+magnetic field, commonly used as proximity sensor.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operation Voltage	3.3V ~ 5.5V</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(36)">⚡ View Code</button>
+          <a href="Code/36.Reed_Switch_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/36.reed_switch_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_36">
+        <div class="code-header">
+          <span class="code-title">📄 36.Reed_Switch_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_36', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_36"><code>int led = 13; // define the LED pin
+int digitalPin = 3; // KY-025 digital interface
+int analogPin = A0; // KY-025 analog interface
+int digitalVal; // digital readings
+int analogVal; //analog readings
+
+void setup()
+{
+  pinMode(led, OUTPUT);
+  pinMode(digitalPin, INPUT);
+  //pinMode(analogPin, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  // Read the digital interface
+  digitalVal = digitalRead(digitalPin); 
+  if(digitalVal == HIGH) // if magnetic field is detected
+  {
+    digitalWrite(led, HIGH); // turn ON Arduino&#x27;s LED
+  }
+  else
+  {
+    digitalWrite(led, LOW); // turn OFF Arduino&#x27;s LED
+  }
+
+  // Read the analog interface
+  analogVal = analogRead(analogPin); 
+  Serial.println(analogVal); // print analog value to serial
+
+  delay(100);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="37" data-category="Audio / Sound" data-title="high sensitivity sound detection module" data-desc="the ky-037 high sensitivity sound detection module is an analog/digital sensor 
+that uses a condenser microphone to observe changes in environment noise. generally 
+used to detect sound above certain levels. it has a potentiometer to set the noise 
+detection threshold.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#37</span>
+          <span class="proj-title">High Sensitivity Sound Detection Module</span>
+        </div>
+        <span class="cat-tag">Audio / Sound</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/37_bb.png', 'Project 37: High Sensitivity Sound Detection Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/37_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/37.jpg', 'Project 37: High Sensitivity Sound Detection Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/37.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The KY-037 high sensitivity sound detection module is an analog/digital sensor 
+that uses a condenser microphone to observe changes in environment noise. Generally 
+used to detect sound above certain levels. It has a potentiometer to set the noise 
+detection threshold.">
+          The KY-037 high sensitivity sound detection module is an analog/digital sensor 
+that uses a condenser microphone to observe changes in environment noise. Generally 
+used to detect sound above certain levels. It has a potentiometer to set the noise 
+detection threshold.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operating voltage	3.3V ~ 5.5V</li><li>• Microphone sensitivity	-42 ±3 db</li><li>• Current consumption	~0.5mA</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(37)">⚡ View Code</button>
+          <a href="Code/37.High_Sensitivity_Sound_Detection_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/37.high_sensitivity_sound_detection_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_37">
+        <div class="code-header">
+          <span class="code-title">📄 37_High_Sensitivity_Sound_Detection_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_37', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_37"><code>int digitalPin = 7;   // KY-037 digital interface
+int analogPin = A0;   // KY-037 analog interface
+int ledPin = 13;      // Arduino LED pin
+int digitalVal;       // digital readings
+int analogVal;        // analog readings
+
+void setup()
+{
+  pinMode(digitalPin,INPUT); 
+  pinMode(analogPin, INPUT);
+  pinMode(ledPin,OUTPUT);      
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  // Read the digital inteface
+  digitalVal = digitalRead(digitalPin); 
+  
+  if(digitalVal == HIGH) 
+  {
+    digitalWrite(ledPin, HIGH); // Turn ON Arduino&#x27;s LED
+  }
+  else
+  {
+    digitalWrite(ledPin, LOW);  // Turn OFF Arduino&#x27;s LED
+  }
+
+  // Read analog interface
+  analogVal = analogRead(analogPin);
+  // Print analog value to serial
+  Serial.println(analogVal);  
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="38" data-category="Audio / Sound" data-title="microphone sound sensor module" data-desc="in this tutorial, we will learn about the ky-038 module, how it works and we will 
+build a simple project using the ky-038 module and an arduino.the ky-038 module 
+will be our main component for this tutorial.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#38</span>
+          <span class="proj-title">Microphone Sound Sensor Module</span>
+        </div>
+        <span class="cat-tag">Audio / Sound</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/38_bb.png', 'Project 38: Microphone Sound Sensor Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/38_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/38.jpg', 'Project 38: Microphone Sound Sensor Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/38.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="In this tutorial, we will learn about the KY-038 module, how it works and we will 
+build a simple project using the KY-038 module and an Arduino.The KY-038 Module 
+will be our main component for this tutorial.">
+          In this tutorial, we will learn about the KY-038 module, how it works and we will 
+build a simple project using the KY-038 module and an Arduino.The KY-038 Module 
+will be our main component for this tutorial.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Operation Voltage	3.3V ~ 5.5V</li><li>• Board Dimensions	1.5cm x 3.5cm</li><li>• Weight: 3.1g</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(38)">⚡ View Code</button>
+          <a href="Code/38.Microphone_Sound_Sensor_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/38.microphone_sound_sensor_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_38">
+        <div class="code-header">
+          <span class="code-title">📄 38_Microphone_Sound_Sensor_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_38', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_38"><code>// Arduino and KY-038 module
+void setup ()
+{
+pinMode (13, OUTPUT); // built-in LED pin set to output
+pinMode (8, INPUT); // module digital output connected to Arduino pin 8
+Serial.begin(9600); // initialize serial
+}
+void loop ()
+{
+// display analog and digital values to serial
+Serial.print(&quot;Analog pin: &quot;);
+Serial.print(analogRead(A0));
+Serial.print(&quot; | Digital pin: &quot;);
+if (digitalRead(8) == HIGH) {
+Serial.println(&quot;High&quot;);
+digitalWrite (13, HIGH); // if module value is higher than threshold,
+// switch-On built-in LED
+}
+else {
+Serial.println(&quot;Low&quot;);
+digitalWrite (13, LOW);
+}
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="39" data-category="Environmental" data-title="water level sensor" data-desc="the sensor has ten exposed copper traces, five of which are power traces and the 
+remaining five are sense traces. these traces are interlaced so that there is 
+one sense trace between every two power traces.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#39</span>
+          <span class="proj-title">Water Level Sensor</span>
+        </div>
+        <span class="cat-tag">Environmental</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/39_bb.png', 'Project 39: Water Level Sensor - Wiring Diagram')">
+          <img src="docs/source/img/connect/39_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/39.jpg', 'Project 39: Water Level Sensor - Phenomenon')">
+          <img src="docs/source/img/phenomenon/39.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The sensor has ten exposed copper traces, five of which are power traces and the 
+remaining five are sense traces. These traces are interlaced so that there is 
+one sense trace between every two power traces.">
+          The sensor has ten exposed copper traces, five of which are power traces and the 
+remaining five are sense traces. These traces are interlaced so that there is 
+one sense trace between every two power traces.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Working voltage: DC3-5V</li><li>• Sensor type: simulation</li><li>• Work current: less than 20mA</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(39)">⚡ View Code</button>
+          <a href="Code/39.Water_Level_Sensor" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/39.water_level_sensor.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_39">
+        <div class="code-header">
+          <span class="code-title">📄 39.Water_Level_Sensor.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_39', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_39"><code>// Sensor pins
+// #define sensorPower 7
+#define sensorPin A0
+
+// Value for storing water level
+int val = 0;
+
+void setup() {
+	// Set D7 as an OUTPUT
+	// pinMode(sensorPower, OUTPUT);
+	
+	// Set to LOW so no power flows through the sensor
+	// digitalWrite(sensorPower, LOW);
+	
+	Serial.begin(9600);
+}
+
+void loop() {
+	//get the reading from the function below and print it
+	int level = readSensor();
+	
+	Serial.print(&quot;Water level: &quot;);
+	Serial.println(level);
+	
+	delay(1000);
+}
+
+//This is a function used to get the reading
+int readSensor() {
+	// digitalWrite(sensorPower, HIGH);	// Turn the sensor ON
+	delay(10);							// wait 10 milliseconds
+	val = analogRead(sensorPin);		// Read the analog value form sensor
+	// digitalWrite(sensorPower, LOW);		// Turn the sensor OFF
+	return val;							// send current reading
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="40" data-category="Modules &amp; Storage" data-title="gy521 module" data-desc="the gy-521 module features a 3-axis gyroscope, a 3-axis accelerometer, a digital 
+motion processor (dmp), and a temperature sensor.the digital motion processor can 
+be used to process complex algorithms directly on the board.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#40</span>
+          <span class="proj-title">GY521 Module</span>
+        </div>
+        <span class="cat-tag">Modules &amp; Storage</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/40_bb.png', 'Project 40: GY521 Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/40_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/40.jpg', 'Project 40: GY521 Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/40.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The GY-521 module features a 3-axis gyroscope, a 3-axis accelerometer, a digital 
+motion processor (DMP), and a temperature sensor.The digital motion processor can 
+be used to process complex algorithms directly on the board.">
+          The GY-521 module features a 3-axis gyroscope, a 3-axis accelerometer, a digital 
+motion processor (DMP), and a temperature sensor.The digital motion processor can 
+be used to process complex algorithms directly on the board.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Chip Used: MPU-6050</li><li>• Power Supply: 3-5V (internal low-dropout voltage regulator)</li><li>• Communication Method: Standard I2C communication protocol</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(40)">⚡ View Code</button>
+          <a href="Code/40.GY521_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/40.gy521_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_40">
+        <div class="code-header">
+          <span class="code-title">📄 40.GY521_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_40', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_40"><code>#include &quot;Wire.h&quot; // This library allows you to communicate with I2C devices.
+
+const int MPU_ADDR = 0x68; // I2C address of the MPU-6050. If AD0 pin is set to HIGH, the I2C address will be 0x69.
+
+int16_t accelerometer_x, accelerometer_y, accelerometer_z; // variables for accelerometer raw data
+int16_t gyro_x, gyro_y, gyro_z; // variables for gyro raw data
+int16_t temperature; // variables for temperature data
+
+char tmp_str[7]; // temporary variable used in convert function
+
+char* convert_int16_to_str(int16_t i) { // converts int16 to string. Moreover, resulting strings will have the same length in the debug monitor.
+  sprintf(tmp_str, &quot;%6d&quot;, i);
+  return tmp_str;
+}
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+  Wire.beginTransmission(MPU_ADDR); // Begins a transmission to the I2C slave (GY-521 board)
+  Wire.write(0x6B); // PWR_MGMT_1 register
+  Wire.write(0); // set to zero (wakes up the MPU-6050)
+  Wire.endTransmission(true);
+}
+void loop() {
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x3B); // starting with register 0x3B (ACCEL_XOUT_H) [MPU-6000 and MPU-6050 Register Map and Descriptions Revision 4.2, p.40]
+  Wire.endTransmission(false); // the parameter indicates that the Arduino will send a restart. As a result, the connection is kept active.
+  Wire.requestFrom(MPU_ADDR, 7*2, true); // request a total of 7*2=14 registers
+  
+  // &quot;Wire.read()&lt;&lt;8 | Wire.read();&quot; means two registers are read and stored in the same variable
+  accelerometer_x = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
+  accelerometer_y = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
+  accelerometer_z = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
+  gyro_x = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
+  gyro_y = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
+  gyro_z = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
+  
+  // print out data
+  Serial.print(&quot;aX = &quot;); Serial.print(convert_int16_to_str(accelerometer_x));
+  Serial.print(&quot; | aY = &quot;); Serial.print(convert_int16_to_str(accelerometer_y));
+  Serial.print(&quot; | aZ = &quot;); Serial.print(convert_int16_to_str(accelerometer_z));
+  // the following equation was taken from the documentation [MPU-6000/MPU-6050 Register Map and Description, p.30]
+  Serial.print(&quot; | gX = &quot;); Serial.print(convert_int16_to_str(gyro_x));
+  Serial.print(&quot; | gY = &quot;); Serial.print(convert_int16_to_str(gyro_y));
+  Serial.print(&quot; | gZ = &quot;); Serial.print(convert_int16_to_str(gyro_z));
+  Serial.println();
+  
+  // delay
+  delay(500);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="41" data-category="Power Supply" data-title="mp1854en" data-desc="this is a tiny, powerful step-down (buck) switching voltage converter with a wide operating range.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#41</span>
+          <span class="proj-title">MP1854EN</span>
+        </div>
+        <span class="cat-tag">Power Supply</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('', 'Project 41: MP1854EN - Wiring Diagram')">
+          <div class="no-img">No wiring diagram needed</div>
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/41-1.jpg', 'Project 41: MP1854EN - Phenomenon')">
+          <img src="docs/source/img/phenomenon/41-1.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="This is a tiny, powerful step-down (Buck) switching voltage converter with a wide operating range.">
+          This is a tiny, powerful step-down (Buck) switching voltage converter with a wide operating range.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• IC Chip: Monolithic Power Systems (MPS) MP1584EN</li><li>• Input Voltage: 4.5V to 28V</li><li>• Output Voltage:0.8V to 20V</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <span class="btn btn-outline btn-sm" style="opacity:0.6;cursor:default;">⚙️ Hardware Only</span>
+          <a href="Code/41.MP1854EN" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/41.mp1854en.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="42" data-category="Environmental" data-title="soil moisture sensor" data-desc="the soil moisture sensor or the hygrometer is usually used to detect the humidity 
+of the soil. so, it is perfect to build an automatic watering system or to monitor 
+the soil moisture of your plants.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#42</span>
+          <span class="proj-title">Soil Moisture Sensor</span>
+        </div>
+        <span class="cat-tag">Environmental</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/42_bb.png', 'Project 42: Soil Moisture Sensor - Wiring Diagram')">
+          <img src="docs/source/img/connect/42_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/42.jpg', 'Project 42: Soil Moisture Sensor - Phenomenon')">
+          <img src="docs/source/img/phenomenon/42.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The soil moisture sensor or the hygrometer is usually used to detect the humidity 
+of the soil. So, it is perfect to build an automatic watering system or to monitor 
+the soil moisture of your plants.">
+          The soil moisture sensor or the hygrometer is usually used to detect the humidity 
+of the soil. So, it is perfect to build an automatic watering system or to monitor 
+the soil moisture of your plants.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Connect</li><li>• .. image:: /img/connect/42_bb.png</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(42)">⚡ View Code</button>
+          <a href="Code/42.Soil_Moisture_Sensor" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/42.soil_moisture_sensor.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_42">
+        <div class="code-header">
+          <span class="code-title">📄 42.Soil_Moisture_Sensor.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_42', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_42"><code>int rainPin = A0;
+int ledPin = 13; 
+
+// you can adjust the threshold value
+int thresholdValue = 800;
+
+void setup(){
+  pinMode(rainPin, INPUT);
+  pinMode(ledPin, OUTPUT);  // Set the LED pin as the output mode
+  Serial.begin(9600);
+}
+
+void loop() {
+  // read the input on analog pin 0:
+  int sensorValue = analogRead(rainPin);
+  Serial.print(sensorValue);
+
+  if(sensorValue &lt; thresholdValue){
+    Serial.println(&quot; - Doesn&#x27;t need watering&quot;);
+    digitalWrite(ledPin, LOW);  // If you don&#x27;t need to water, turn off the LED
+  } else {
+    Serial.println(&quot; - Time to water your plant&quot;);
+    // If you need to water, flash the LED quickly
+    for(int i = 0; i &lt; 5; i++){
+      digitalWrite(ledPin, HIGH); 
+      delay(100);                 
+      digitalWrite(ledPin, LOW);   
+      delay(100);                 
+    }
+    digitalWrite(ledPin, LOW);
+  }
+  delay(500);  //
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="43" data-category="Modules &amp; Storage" data-title="ds1302 rtc module" data-desc="the ds1320 rtc is a compact real time battery backed clock module capable of 
+accurately keeping the current time and date. it includes a 24 hour clock consisting 
+of hours, minutes &amp; seconds and a calendar which stores the current year in 2 digits, 
+month and date. the calendar is also capable of correcting for months with different 
+amounts of days and leap years. additionally there is a day of the week counter to 
+keep track of the current date.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#43</span>
+          <span class="proj-title">Ds1302 Rtc Module</span>
+        </div>
+        <span class="cat-tag">Modules &amp; Storage</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/43_bb.png', 'Project 43: Ds1302 Rtc Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/43_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/43.jpg', 'Project 43: Ds1302 Rtc Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/43.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="The DS1320 RTC is a compact real time battery backed clock module capable of 
+accurately keeping the current time and date. It includes a 24 hour clock consisting 
+of hours, minutes &amp; seconds and a calendar which stores the current year in 2 digits, 
+month and date. The calendar is also capable of correcting for months with different 
+amounts of days and leap years. Additionally there is a day of the week counter to 
+keep track of the current date.">
+          The DS1320 RTC is a compact real time battery backed clock module capable of 
+accurately keeping the current time and date. It includes a 24 hour clock consisting 
+of hours, minutes &amp; seconds and a calendar which stores the current year in 2 digits, 
+month and date. The calendar is also capable of correcting for months with different 
+amounts of days and leap years. Additionally there is a day of the week counter to 
+keep track of the current date.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• 2.0V to 5.5V Full Operation</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(43)">⚡ View Code</button>
+          <a href="Code/43.Ds1302_Rtc_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/43.ds1302_rtc_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_43">
+        <div class="code-header">
+          <span class="code-title">📄 43.Ds1302_Rtc_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_43', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_43"><code>#include &lt;ThreeWire.h&gt;  
+#include &lt;RtcDS1302.h&gt;
+
+ThreeWire myWire(4,5,2); // IO, SCLK, CE
+RtcDS1302&lt;ThreeWire&gt; Rtc(myWire);
+
+void setup () 
+{
+    Serial.begin(9600);
+
+    Serial.print(&quot;compiled: &quot;);
+    Serial.print(__DATE__);
+    Serial.println(__TIME__);
+
+    Rtc.Begin();
+
+    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
+    printDateTime(compiled);
+    Serial.println();
+
+    if (!Rtc.IsDateTimeValid()) 
+    {
+        // Common Causes:
+        //    1) first time you ran and the device wasn&#x27;t running yet
+        //    2) the battery on the device is low or even missing
+
+        Serial.println(&quot;RTC lost confidence in the DateTime!&quot;);
+        Rtc.SetDateTime(compiled);
+    }
+
+    if (Rtc.GetIsWriteProtected())
+    {
+        Serial.println(&quot;RTC was write protected, enabling writing now&quot;);
+        Rtc.SetIsWriteProtected(false);
+    }
+
+    if (!Rtc.GetIsRunning())
+    {
+        Serial.println(&quot;RTC was not actively running, starting now&quot;);
+        Rtc.SetIsRunning(true);
+    }
+
+    RtcDateTime now = Rtc.GetDateTime();
+    if (now &lt; compiled) 
+    {
+        Serial.println(&quot;RTC is older than compile time!  (Updating DateTime)&quot;);
+        Rtc.SetDateTime(compiled);
+    }
+    else if (now &gt; compiled) 
+    {
+        Serial.println(&quot;RTC is newer than compile time. (this is expected)&quot;);
+    }
+    else if (now == compiled) 
+    {
+        Serial.println(&quot;RTC is the same as compile time! (not expected but all is fine)&quot;);
+    }
+}
+
+void loop () 
+{
+    RtcDateTime now = Rtc.GetDateTime();
+
+    printDateTime(now);
+    Serial.println();
+
+    if (!now.IsValid())
+    {
+        // Common Causes:
+        //    1) the battery on the device is low or even missing and the power line was disconnected
+        Serial.println(&quot;RTC lost confidence in the DateTime!&quot;);
+    }
+
+    delay(5000); // five seconds
+}
+
+#define countof(a) (sizeof(a) / sizeof(a[0]))
+
+void printDateTime(const RtcDateTime&amp; dt)
+{
+    char datestring[20];
+
+    snprintf_P(datestring, 
+            countof(datestring),
+            PSTR(&quot;%02u/%02u/%04u %02u:%02u:%02u&quot;),
+            dt.Month(),
+            dt.Day(),
+            dt.Year(),
+            dt.Hour(),
+            dt.Minute(),
+            dt.Second() );
+    Serial.print(datestring);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="44" data-category="Modules &amp; Storage" data-title="sd card info" data-desc="specification
+--------------">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#44</span>
+          <span class="proj-title">SD Card Info</span>
+        </div>
+        <span class="cat-tag">Modules &amp; Storage</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/44_bb.png', 'Project 44: SD Card Info - Wiring Diagram')">
+          <img src="docs/source/img/connect/44_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/44.jpg', 'Project 44: SD Card Info - Phenomenon')">
+          <img src="docs/source/img/phenomenon/44.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="Specification
+--------------">
+          Specification
+--------------
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Product weight: 10g</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(44)">⚡ View Code</button>
+          <a href="Code/44.SD_Card_Info" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/44.sd_card_info.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_44">
+        <div class="code-header">
+          <span class="code-title">📄 44.SD_Card_Info.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_44', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_44"><code>#include &lt;SPI.h&gt;
+#include &lt;SD.h&gt;
+
+File myFile;
+
+
+void setup() {
+  // Open serial communications and wait for port to open:
+  Serial.begin(9600);
+
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+  Serial.print(&quot;Initializing SD card...&quot;);
+
+  if(!SD.begin(4)){
+    Serial.println(&quot;Initializing failed!&quot;);
+    while(1);
+  }
+  Serial.println(&quot;Initializing done.&quot;);
+
+  if(SD.exists(&quot;example.txt&quot;)){
+    Serial.println(&quot;example.txt exits.&quot;);
+  }else{
+    Serial.println(&quot;example.txt doesn&#x27;t exist.&quot;);
+  }
+
+  Serial.println(&quot;Creating example.txt...&quot;);
+  myFile = SD.open(&quot;example.txt&quot;, FILE_WRITE);
+  myFile.write(&quot;Hello&quot;);
+  Serial.println(&quot;Writing to file successful&quot;);
+  myFile.close();
+}
+
+void loop(){
+  
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card" data-num="45" data-category="Optical &amp; Distance" data-title="ultrasonic module" data-desc="as the ultrasonic has strong directivity, slow energy consumption and far spread 
+distance in the media, so it is commonly used in the measurement of distance, 
+such as range finder and position measuring instrument. ultrasonic detector 
+module can provide 2cm-450cm non-contact sensing distance, and its ranging accuracy 
+is up to 3mm, very good to meet the normal requirements. the module includes an 
+ultrasonic transmitter and receiver as well as the corresponding control circuit.">
+      <div class="card-header">
+        <div class="card-title-area">
+          <span class="proj-badge">#45</span>
+          <span class="proj-title">Ultrasonic Module</span>
+        </div>
+        <span class="cat-tag">Optical &amp; Distance</span>
+      </div>
+      
+      <div class="card-media">
+        <div class="media-box" onclick="openLightbox('docs/source/img/connect/45_bb.png', 'Project 45: Ultrasonic Module - Wiring Diagram')">
+          <img src="docs/source/img/connect/45_bb.png" alt="Wiring Diagram" loading="lazy">
+          <span class="media-label">🔌 Wiring Diagram</span>
+        </div>
+        <div class="media-box" onclick="openLightbox('docs/source/img/phenomenon/45.jpg', 'Project 45: Ultrasonic Module - Phenomenon')">
+          <img src="docs/source/img/phenomenon/45.jpg" alt="Phenomenon" loading="lazy">
+          <span class="media-label">📸 Photo / Output</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="As the ultrasonic has strong directivity, slow energy consumption and far spread 
+distance in the media, so it is commonly used in the measurement of distance, 
+such as range finder and position measuring instrument. Ultrasonic detector 
+module can provide 2cm-450cm non-contact sensing distance, and its ranging accuracy 
+is up to 3mm, very good to meet the normal requirements. The module includes an 
+ultrasonic transmitter and receiver as well as the corresponding control circuit.">
+          As the ultrasonic has strong directivity, slow energy consumption and far spread 
+distance in the media, so it is commonly used in the measurement of distance, 
+such as range finder and position measuring instrument. Ultrasonic detector 
+module can provide 2cm-450cm non-contact sensing distance, and its ranging accuracy 
+is up to 3mm, very good to meet the normal requirements. The module includes an 
+ultrasonic transmitter and receiver as well as the corresponding control circuit.
+        </div>
+        
+        <div class="card-specs">
+          <ul><li>• Working voltage：0.5V(DC)</li><li>• Working current：15mA</li><li>• Detecting range：2-450cm</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" onclick="toggleCode(45)">⚡ View Code</button>
+          <a href="Code/45.Ultrasonic_Module" class="btn btn-outline btn-sm" target="_blank">📁 Folder</a>
+          <a href="docs/build/html/45.ultrasonic_module.html" class="btn btn-outline btn-sm" target="_blank">📖 Doc</a>
+        </div>
+      </div>
+
+      <div class="code-section" id="codeSection_45">
+        <div class="code-header">
+          <span class="code-title">📄 45.Ultrasonic_Module.ino</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_45', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_45"><code>int inputPin=4; // define ultrasonic signal receiver pin ECHO to D4 
+int outputPin=5; // define ultrasonic signal transmitter pin TRIG to D5
+ void setup()
+{
+Serial.begin(9600); 
+pinMode(inputPin, INPUT); 
+pinMode(outputPin, OUTPUT);
+
+}
+void loop()
+{
+digitalWrite(outputPin, LOW); delayMicroseconds(2);
+digitalWrite(outputPin, HIGH); // Pulse for 10μ s to trigger ultrasonic detection
+delayMicroseconds(10); 
+digitalWrite(outputPin, LOW);
+int distance = pulseIn(inputPin, HIGH); // Read receiver pulse time 
+distance= distance/58; // Transform pulse time to distance 
+Serial.println(distance); //Output distance
+delay(50);
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <h3>No matching sensors found</h3>
+      <p>Try searching for a different keyword or select "All".</p>
+    </div>
+  </div>
+</main>
+
+<div id="imageModal" class="modal" onclick="closeLightbox()">
+  <span class="modal-close">&times;</span>
+  <img class="modal-content" id="modalImg" alt="Preview">
+  <div class="modal-caption" id="modalCaption"></div>
+</div>
+
+<script>
+  function toggleCode(num) {
+    const el = document.getElementById('codeSection_' + num);
+    if (el) {
+      el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+  }
+
+  function copyCode(id, btn) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.innerText;
+      btn.innerText = '✅ Copied!';
+      btn.style.borderColor = '#10b981';
+      btn.style.color = '#10b981';
+      setTimeout(() => {
+        btn.innerText = original;
+        btn.style.borderColor = '';
+        btn.style.color = '';
+      }, 2000);
+    });
+  }
+
+  function openLightbox(src, caption) {
+    if (!src) return;
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImg');
+    const modalCaption = document.getElementById('modalCaption');
+    modal.style.display = 'flex';
+    modalImg.src = src;
+    modalCaption.innerText = caption;
+  }
+
+  function closeLightbox() {
+    document.getElementById('imageModal').style.display = 'none';
+  }
+
+  // Filter & Search
+  const searchInput = document.getElementById('searchInput');
+  const pills = document.querySelectorAll('.pill');
+  const cards = document.querySelectorAll('.project-card');
+  const emptyState = document.getElementById('emptyState');
+
+  let activeCategory = 'ALL';
+
+  function filterCards() {
+    const query = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const cat = card.getAttribute('data-category');
+      const title = card.getAttribute('data-title');
+      const desc = card.getAttribute('data-desc');
+      const num = card.getAttribute('data-num');
+
+      const matchesCat = (activeCategory === 'ALL' || cat === activeCategory);
+      const matchesSearch = !query || 
+                            title.includes(query) || 
+                            desc.includes(query) || 
+                            num === query || 
+                            ('project ' + num).includes(query);
+
+      if (matchesCat && matchesSearch) {
+        card.style.display = 'flex';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    emptyState.style.display = (visibleCount === 0) ? 'block' : 'none';
+  }
+
+  searchInput.addEventListener('input', filterCards);
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      activeCategory = pill.getAttribute('data-category');
+      filterCards();
+    });
+  });
+
+  // ESC key closes lightbox
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLightbox();
+  });
+</script>
+
+</body>
+</html>
