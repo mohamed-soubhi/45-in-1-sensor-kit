@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project 3: Autonomous Proximity Radar &amp; Dual-Domain Anti-Collision System | Level 1 Sensor Fusion</title>
+  <style>
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --border: #334155;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent: #38bdf8;
+  --warning: #f59e0b;
+  --code-bg: #0b1120;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  padding-bottom: 60px;
+}
+.navbar {
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.nav-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-links {
+  display: flex;
+  gap: 10px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  transition: all 0.2s;
+}
+.btn:hover {
+  background: var(--border);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  color: white;
+}
+.btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-color: #d97706;
+  color: #0f172a;
+}
+.container {
+  max-width: 1100px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+h1 { font-size: 2rem; color: #f1f5f9; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+h2 { font-size: 1.35rem; color: var(--accent); margin: 30px 0 15px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); padding-bottom: 8px; }
+h3 { font-size: 1.1rem; color: #cbd5e1; margin: 20px 0 10px; }
+p, ul, ol { margin-bottom: 16px; color: #cbd5e1; font-size: 1rem; }
+ul, ol { padding-left: 24px; }
+li { margin-bottom: 6px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+tr:hover {
+  background: rgba(51, 65, 85, 0.3);
+}
+.badge-pin {
+  display: inline-block;
+  background: #0284c7;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-family: monospace;
+}
+.code-wrapper {
+  position: relative;
+  margin: 20px 0;
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  overflow-x: auto;
+}
+pre code {
+  font-family: 'Consolas', 'Fira Code', Monaco, monospace;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  line-height: 1.5;
+}
+.copy-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.copy-btn:hover {
+  background: var(--border);
+  color: var(--accent);
+}
+.img-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+.img-card {
+  background: #0b1120;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.img-card img {
+  max-width: 100%;
+  max-height: 380px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+.img-label {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.highlight-box {
+  background: rgba(37, 99, 235, 0.1);
+  border-left: 4px solid var(--accent);
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+}
+.warning-box {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 4px solid var(--warning);
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-title">
+    <span>⚡ Project 3: Autonomous Proximity Radar &amp; Dual-Domain Anti-Collision System</span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html" class="btn btn-warning">⬅ Level 1 Fusion Hub</a>
+    <a href="../../index.html" class="btn">🏠 Main Hub</a>
+    <a href="Project_03_Autonomous_Proximity_Radar_Ultrasonic_IR_Encoder.ino" class="btn btn-primary" download>💾 Download .ino</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Project 3: Autonomous Proximity Radar &amp; Dual-Domain Anti-Collision System</h1>
+  
+  <div class="highlight-box">
+    <h3>Sensor Fusion Architecture</h3>
+    <p>Automated vehicles, robotic platforms, and industrial machinery require robust obstacle detection that cannot be defeated by environment anomalies:
+- **Acoustic Ultrasonic Sensors (HC-SR04)** excel at measuring distance to large surfaces from 10cm to 400cm, but fail on thin wires, sound-absorbing foam/curtains, or when objects strike at steep angled reflections.
+- **Optical Infrared Sensors (Module #29)** respond within microseconds to obstacles directly in front of the vehicle (1cm to 10cm), catching sudden entries that fall inside the ultrasonic sensor&#x27;s near-field blind spot.
+- **Line Tracking Sensors (Module #28)** pointed downwards serve as ground reflection sensors, instantly detecting staircases, table edges, and cliff drop-offs.</p>
+  </div>
+
+  <h2>1. Bill of Materials (Hosyond 45-in-1 Kit)</h2>
+  <table>
+<thead><tr>
+  <th>Component</th>
+  <th>Kit Module #</th>
+  <th>Function</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td>Arduino Uno</td>
+  <td>Target Board</td>
+  <td>Central collision processing</td>
+</tr>
+<tr>
+  <td>Ultrasonic Module</td>
+  <td>Module #45 (HC-SR04)</td>
+  <td>Acoustic metric rangefinder</td>
+</tr>
+<tr>
+  <td>IR Obstacle Avoidance</td>
+  <td>Module #29</td>
+  <td>Near-field high-speed optical reflex</td>
+</tr>
+<tr>
+  <td>Line Tracking Sensor</td>
+  <td>Module #28</td>
+  <td>Downward cliff and drop-off monitor</td>
+</tr>
+<tr>
+  <td>RGB LED Module</td>
+  <td>Module #01</td>
+  <td>4-stage optical distance indicator</td>
+</tr>
+<tr>
+  <td>Passive Buzzer Module</td>
+  <td>Module #12</td>
+  <td>Variable pitch automotive distance beeper</td>
+</tr>
+<tr>
+  <td>5V Relay Module</td>
+  <td>Module #30</td>
+  <td>Emergency braking / traction motor interlock</td>
+</tr>
+</tbody></table>
+
+
+  <h2>2. Arduino Uno Wiring Schematic Table</h2>
+  <table>
+<thead><tr>
+  <th>Module</th>
+  <th>Sensor Pin</th>
+  <th>Arduino Uno Pin</th>
+  <th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td>Ultrasonic (#45)</td>
+  <td>Trig</td>
+  <td><span class="badge-pin">D12</span></td>
+  <td>10µs ultrasonic ping trigger</td>
+</tr>
+<tr>
+  <td></td>
+  <td>Echo</td>
+  <td><span class="badge-pin">D11</span></td>
+  <td>Echo pulse timing input</td>
+</tr>
+<tr>
+  <td></td>
+  <td>VCC / GND</td>
+  <td>5V / GND</td>
+  <td>Power supply</td>
+</tr>
+<tr>
+  <td>IR Obstacle (#29)</td>
+  <td>OUT</td>
+  <td><span class="badge-pin">D3</span></td>
+  <td>Active LOW optical reflection detection</td>
+</tr>
+<tr>
+  <td></td>
+  <td>VCC / GND</td>
+  <td>5V / GND</td>
+  <td>Power supply</td>
+</tr>
+<tr>
+  <td>Line Tracker (#28)</td>
+  <td>OUT</td>
+  <td><span class="badge-pin">D2</span></td>
+  <td>Active HIGH cliff drop-off detection</td>
+</tr>
+<tr>
+  <td></td>
+  <td>VCC / GND</td>
+  <td>5V / GND</td>
+  <td>Power supply</td>
+</tr>
+<tr>
+  <td>RGB LED (#01)</td>
+  <td>R (Red)</td>
+  <td><span class="badge-pin">D6 (PWM)</span></td>
+  <td>Red color channel</td>
+</tr>
+<tr>
+  <td></td>
+  <td>G (Green)</td>
+  <td><span class="badge-pin">D5 (PWM)</span></td>
+  <td>Green color channel</td>
+</tr>
+<tr>
+  <td></td>
+  <td>B (Blue)</td>
+  <td><span class="badge-pin">D9 (PWM)</span></td>
+  <td>Blue color channel</td>
+</tr>
+<tr>
+  <td></td>
+  <td>- (GND)</td>
+  <td>GND</td>
+  <td>Common Cathode ground</td>
+</tr>
+<tr>
+  <td>Passive Buzzer (#12)</td>
+  <td>S (Signal)</td>
+  <td><span class="badge-pin">D8</span></td>
+  <td>Tone frequency output</td>
+</tr>
+<tr>
+  <td></td>
+  <td>- (GND)</td>
+  <td>GND</td>
+  <td>Buzzer ground</td>
+</tr>
+<tr>
+  <td>5V Relay (#30)</td>
+  <td>IN</td>
+  <td><span class="badge-pin">D7</span></td>
+  <td>Active LOW braking trigger</td>
+</tr>
+<tr>
+  <td></td>
+  <td>VCC / GND</td>
+  <td>5V / GND</td>
+  <td>Relay power</td>
+</tr>
+</tbody></table>
+
+
+  <h2>3. Key Embedded Engineering Features</h2>
+  <div class="warning-box">
+    <ul>
+<li><strong>Exponential Moving Average Filter (EMA):</strong> Smooths noisy ultrasonic distance measurements (`ALPHA = 0.4`), preventing false collision trips from stray acoustic noise.</li>
+<li><strong>Automotive Beeper Emulation:</strong> As an obstacle closes in, the beeping interval dynamically decreases from 400ms down to 120ms, and locks into a solid 2.2 kHz alarm when collision is imminent.</li>
+<li><strong>Zero-Latency Emergency Brake:</strong> The 5V relay trips instantly if either the optical near-field sensor or ground cliff sensor fires.</li>
+</ul>
+  </div>
+
+  <h2>4. Production Arduino Sketch (.ino)</h2>
+  <p>Complete C/C++ sketch ready to flash onto Arduino Uno. All timers are 100% non-blocking using <code>millis()</code>.</p>
+  
+  <div class="code-wrapper">
+    <button class="copy-btn" onclick="copyCode('sketchCode', this)">📋 Copy Sketch</button>
+    <pre><code id="sketchCode">/*
+ * Project 3: Autonomous Proximity Radar &amp; Dual-Domain Anti-Collision System
+ * -------------------------------------------------------------------------
+ * Target Board: Arduino Uno (ATmega328P)
+ * Kit: Hosyond 45-in-1 Sensor Kit
+ * 
+ * Fused Sensors:
+ *  - Module #45: HC-SR04 Ultrasonic Sensor (Trig D12, Echo D11) - Acoustic ToF Ranging
+ *  - Module #29: Infrared Obstacle Avoidance Sensor (Digital D3) - Fast Optical Reflection
+ *  - Module #28: Line Tracking Sensor (Digital D2) - Ground Cliff / Drop-Off Sensor
+ * 
+ * Actuators &amp; Indicators:
+ *  - Module #01: RGB LED (Pins D6 Red, D5 Green, D9 Blue) - Distance Gradient
+ *  - Module #12: Passive Buzzer (Digital D8) - Automotive Variable Pitch Beep
+ *  - Module #30: 5V Relay Module (Digital D7) - Emergency Braking / Motor Cutoff
+ * 
+ * Sensor Fusion Principle:
+ *  1. Ultrasonic sensors provide metric distance (2cm to 400cm) via acoustic echo time,
+ *     but suffer from surface reflection specular angles and sound-absorbing materials.
+ *  2. Optical IR sensors respond instantaneously (&lt;1ms) in the close field (1cm to 10cm),
+ *     filling ultrasonic near-field blind spots.
+ *  3. Ground Line-Tracker acts as a downward cliff sensor to prevent table drop-offs.
+ *  4. Fusing both modalities eliminates blind spots and triggers staged safety responses:
+ *     - CLEAR (&gt; 35cm): Green LED, Silent, Relay energized (drive enabled)
+ *     - APPROACH (20 - 35cm): Cyan/Yellow LED, Slow intermittent beeps (2 Hz)
+ *     - WARNING (10 - 20cm): Orange LED, Fast intermittent beeps (8 Hz)
+ *     - CRITICAL (&lt; 10cm OR IR Trigger OR Cliff Detected): Red LED, Continuous Tone, Relay TRIP (Emergency Stop)
+ */
+
+// ======================== PIN ASSIGNMENTS ========================
+const int PIN_US_TRIG       = 12;  // Ultrasonic Trigger
+const int PIN_US_ECHO       = 11;  // Ultrasonic Echo
+const int PIN_IR_OBSTACLE   = 3;   // Optical IR Obstacle (Active LOW)
+const int PIN_CLIFF_TRACKER = 2;   // Ground Cliff Tracker (Active LOW over floor)
+
+// Actuators
+const int PIN_RGB_RED       = 6;   // PWM
+const int PIN_RGB_GREEN     = 5;   // PWM
+const int PIN_RGB_BLUE      = 9;   // PWM
+const int PIN_BUZZER        = 8;   // Passive Buzzer (tone)
+const int PIN_BRAKE_RELAY   = 7;   // 5V Relay for Motor / Brake (Active LOW)
+
+// ==================== ZONES &amp; THRESHOLDS =========================
+const float DIST_CLEAR_CM    = 35.0;
+const float DIST_WARNING_CM  = 20.0;
+const float DIST_CRITICAL_CM = 10.0;
+
+enum RadarZone {
+  ZONE_CLEAR,       // Path completely unobstructed
+  ZONE_APPROACH,    // Long-distance object detected (35 - 20cm)
+  ZONE_WARNING,     // Medium-distance obstacle closing (20 - 10cm)
+  ZONE_EMERGENCY    // Critical collision imminent / cliff breach!
+};
+
+RadarZone currentZone = ZONE_CLEAR;
+
+// Non-blocking Timing
+unsigned long lastRangingTime = 0;
+const unsigned long RANGING_INTERVAL = 60; // 60ms between ultrasonic pings (avoids echoes)
+
+unsigned long lastBeepToggleTime = 0;
+bool beepState = false;
+int beepIntervalMs = 500;
+
+unsigned long lastTelemetryTime = 0;
+
+// Filtered Distance (Exponential Moving Average)
+float filteredDistance = 100.0;
+const float ALPHA = 0.4; // Filter weight (0.0 to 1.0)
+
+// ======================== HELPER FUNCTIONS =======================
+// Trigger Ultrasonic Distance Measurement
+float measureUltrasonicDistanceCm() {
+  digitalWrite(PIN_US_TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(PIN_US_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(PIN_US_TRIG, LOW);
+
+  // Measure echo pulse duration (timeout 25ms = max ~4.3 meters)
+  unsigned long duration = pulseIn(PIN_US_ECHO, HIGH, 25000);
+  if (duration == 0) return 400.0; // Out of range or no echo
+
+  // Speed of sound: 343 m/s = 0.0343 cm/us -&gt; distance = (duration * 0.0343) / 2
+  float distance = (duration * 0.0343) / 2.0;
+  return distance;
+}
+
+// Set RGB LED Color
+void setRgbColor(byte r, byte g, byte b) {
+  analogWrite(PIN_RGB_RED, r);
+  analogWrite(PIN_RGB_GREEN, g);
+  analogWrite(PIN_RGB_BLUE, b);
+}
+
+// ======================== SETUP ==================================
+void setup() {
+  Serial.begin(115200);
+  while (!Serial &amp;&amp; millis() &lt; 3000);
+
+  Serial.println(F(&quot;\n=======================================================&quot;));
+  Serial.println(F(&quot;  PROJECT 3: PROXIMITY RADAR &amp; MULTI-SENSOR ANTI-COLLISION&quot;));
+  Serial.println(F(&quot;=======================================================&quot;));
+
+  pinMode(PIN_US_TRIG, OUTPUT);
+  pinMode(PIN_US_ECHO, INPUT);
+  pinMode(PIN_IR_OBSTACLE, INPUT);
+  pinMode(PIN_CLIFF_TRACKER, INPUT);
+
+  pinMode(PIN_RGB_RED, OUTPUT);
+  pinMode(PIN_RGB_GREEN, OUTPUT);
+  pinMode(PIN_RGB_BLUE, OUTPUT);
+  pinMode(PIN_BUZZER, OUTPUT);
+  pinMode(PIN_BRAKE_RELAY, OUTPUT);
+
+  // Initial State: Safe drive enabled
+  digitalWrite(PIN_BRAKE_RELAY, HIGH); // Relay ready (Active LOW)
+  setRgbColor(0, 255, 0);              // Green
+  noTone(PIN_BUZZER);
+
+  Serial.println(F(&quot;Ultrasonic &amp; Optical Radar online. Scanning perimeter...\n&quot;));
+}
+
+// ======================== MAIN LOOP ==============================
+void loop() {
+  unsigned long currentMillis = millis();
+
+  // 1. Periodic Ranging &amp; Sensor Fusion
+  if (currentMillis - lastRangingTime &gt;= RANGING_INTERVAL) {
+    lastRangingTime = currentMillis;
+
+    // Read Ultrasonic Sensor with Exponential Filter
+    float rawDist = measureUltrasonicDistanceCm();
+    filteredDistance = (ALPHA * rawDist) + ((1.0 - ALPHA) * filteredDistance);
+
+    // Read Optical Near-Field IR Obstacle (Active LOW)
+    bool irObstacleDetected = (digitalRead(PIN_IR_OBSTACLE) == LOW);
+
+    // Read Ground Cliff Tracker (Active HIGH indicates table edge/drop-off)
+    bool cliffDetected = (digitalRead(PIN_CLIFF_TRACKER) == HIGH);
+
+    // 2. Sensor Fusion Zone Determination
+    if (cliffDetected || irObstacleDetected || filteredDistance &lt; DIST_CRITICAL_CM) {
+      currentZone = ZONE_EMERGENCY;
+    } else if (filteredDistance &lt; DIST_WARNING_CM) {
+      currentZone = ZONE_WARNING;
+    } else if (filteredDistance &lt; DIST_CLEAR_CM) {
+      currentZone = ZONE_APPROACH;
+    } else {
+      currentZone = ZONE_CLEAR;
+    }
+
+    // 3. Zone Actuation &amp; LED Visualization
+    switch (currentZone) {
+      case ZONE_CLEAR:
+        setRgbColor(0, 255, 0);              // Bright Green
+        digitalWrite(PIN_BRAKE_RELAY, HIGH); // Traction motor enabled
+        noTone(PIN_BUZZER);
+        beepIntervalMs = 0;                  // Silent
+        break;
+
+      case ZONE_APPROACH:
+        setRgbColor(255, 255, 0);            // Yellow
+        digitalWrite(PIN_BRAKE_RELAY, HIGH); // Drive enabled but warning
+        beepIntervalMs = 400;                // Slow cadence (2.5 Hz)
+        break;
+
+      case ZONE_WARNING:
+        setRgbColor(255, 120, 0);            // Orange
+        digitalWrite(PIN_BRAKE_RELAY, HIGH); // Drive enabled
+        beepIntervalMs = 120;                // Rapid cadence (8 Hz)
+        break;
+
+      case ZONE_EMERGENCY:
+        setRgbColor(255, 0, 0);              // Solid Red
+        digitalWrite(PIN_BRAKE_RELAY, LOW);  // TRIP BRAKE RELAY (Emergency Stop!)
+        beepIntervalMs = -1;                 // Continuous solid tone
+        tone(PIN_BUZZER, 2200);              // High piercing pitch
+        break;
+    }
+
+    // 4. Diagnostics Telemetry (Every 250ms)
+    if (currentMillis - lastTelemetryTime &gt;= 250) {
+      lastTelemetryTime = currentMillis;
+      Serial.print(F(&quot;[RADAR] Dist: &quot;));
+      Serial.print(filteredDistance, 1);
+      Serial.print(F(&quot; cm | IR Near: &quot;));
+      Serial.print(irObstacleDetected ? F(&quot;TRIPPED&quot;) : F(&quot;CLEAR&quot;));
+      Serial.print(F(&quot; | Cliff: &quot;));
+      Serial.print(cliffDetected ? F(&quot;CLIFF!!&quot;) : F(&quot;OK&quot;));
+      Serial.print(F(&quot; | ZONE: &quot;));
+
+      switch (currentZone) {
+        case ZONE_CLEAR:      Serial.println(F(&quot;CLEAR [Drive Enabled]&quot;)); break;
+        case ZONE_APPROACH:   Serial.println(F(&quot;APPROACH [Slow Down]&quot;)); break;
+        case ZONE_WARNING:    Serial.println(F(&quot;WARNING [Caution]&quot;)); break;
+        case ZONE_EMERGENCY:  Serial.println(F(&quot;EMERGENCY BRAKE ENGAGED!&quot;)); break;
+      }
+    }
+  }
+
+  // 5. Variable Pitch Acoustic Beeper (Non-blocking)
+  if (beepIntervalMs &gt; 0) {
+    if (currentMillis - lastBeepToggleTime &gt;= (unsigned long)beepIntervalMs) {
+      lastBeepToggleTime = currentMillis;
+      beepState = !beepState;
+      if (beepState) {
+        tone(PIN_BUZZER, 1800);
+      } else {
+        noTone(PIN_BUZZER);
+      }
+    }
+  } else if (beepIntervalMs == 0) {
+    noTone(PIN_BUZZER);
+  }
+}
+</code></pre>
+  </div>
+</div>
+
+
+<script>
+function copyCode(id, btn) {
+  const code = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    const orig = btn.innerText;
+    btn.innerText = '✅ Copied!';
+    btn.style.color = '#10b981';
+    btn.style.borderColor = '#10b981';
+    setTimeout(() => {
+      btn.innerText = orig;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

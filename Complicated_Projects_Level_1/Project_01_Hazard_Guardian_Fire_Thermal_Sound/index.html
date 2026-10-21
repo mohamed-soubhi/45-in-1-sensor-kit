@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project 1: Multi-Sensor Environmental Hazard Guardian | Level 1 Sensor Fusion</title>
+  <style>
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --border: #334155;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent: #38bdf8;
+  --warning: #f59e0b;
+  --code-bg: #0b1120;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  padding-bottom: 60px;
+}
+.navbar {
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.nav-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-links {
+  display: flex;
+  gap: 10px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  transition: all 0.2s;
+}
+.btn:hover {
+  background: var(--border);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  color: white;
+}
+.btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-color: #d97706;
+  color: #0f172a;
+}
+.container {
+  max-width: 1100px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+h1 { font-size: 2rem; color: #f1f5f9; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+h2 { font-size: 1.35rem; color: var(--accent); margin: 30px 0 15px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); padding-bottom: 8px; }
+h3 { font-size: 1.1rem; color: #cbd5e1; margin: 20px 0 10px; }
+p, ul, ol { margin-bottom: 16px; color: #cbd5e1; font-size: 1rem; }
+ul, ol { padding-left: 24px; }
+li { margin-bottom: 6px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+tr:hover {
+  background: rgba(51, 65, 85, 0.3);
+}
+.badge-pin {
+  display: inline-block;
+  background: #0284c7;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-family: monospace;
+}
+.code-wrapper {
+  position: relative;
+  margin: 20px 0;
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  overflow-x: auto;
+}
+pre code {
+  font-family: 'Consolas', 'Fira Code', Monaco, monospace;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  line-height: 1.5;
+}
+.copy-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.copy-btn:hover {
+  background: var(--border);
+  color: var(--accent);
+}
+.img-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+.img-card {
+  background: #0b1120;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.img-card img {
+  max-width: 100%;
+  max-height: 380px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+.img-label {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.highlight-box {
+  background: rgba(37, 99, 235, 0.1);
+  border-left: 4px solid var(--accent);
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+}
+.warning-box {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 4px solid var(--warning);
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-title">
+    <span>⚡ Project 1: Multi-Sensor Environmental Hazard Guardian</span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html" class="btn btn-warning">⬅ Level 1 Fusion Hub</a>
+    <a href="../../index.html" class="btn">🏠 Main Hub</a>
+    <a href="Project_01_Hazard_Guardian_Fire_Thermal_Sound.ino" class="btn btn-primary" download>💾 Download .ino</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Project 1: Multi-Sensor Environmental Hazard Guardian</h1>
+  
+  <div class="highlight-box">
+    <h3>Sensor Fusion Architecture</h3>
+    <p>Traditional fire, explosion, and hazard monitoring systems in industrial and residential embedded systems frequently fail due to two opposing problems:
+1. **False Alarms:** A single photodiode flame sensor will falsely trigger from bright ambient sunlight, halogen lighting, or smartphone flashes.
+2. **Thermal Lag:** A standard ambient temperature sensor can take several minutes to reach a fixed threshold (e.g. 50°C), by which time an electrical fire or chemical flare has already spread.
+
+This **Sensor Fusion Level 1 Project** combines three distinct physical sensing domains to calculate a dynamic **Composite Risk Score (0 - 100%)**:
+- **Optical Infrared Detection** (Flame Sensor Module #34)
+- **Thermodynamic Rate of Change ($\frac{dT}{dt}$)** (Analog Temperature Sensor Module #13)
+- **Acoustic Shockwave / Noise Detection** (High Sensitivity Sound Sensor Module #37)</p>
+  </div>
+
+  <h2>1. Bill of Materials (Hosyond 45-in-1 Kit)</h2>
+  <table>
+<thead><tr>
+  <th>Component</th>
+  <th>Kit Module #</th>
+  <th>Function</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td>Arduino Uno</td>
+  <td>Target Board</td>
+  <td>Central processing &amp; state machine</td>
+</tr>
+<tr>
+  <td>Flame Sensor Module</td>
+  <td>Module #34</td>
+  <td>Dual analog intensity &amp; digital interrupt</td>
+</tr>
+<tr>
+  <td>Analog Temperature Sensor</td>
+  <td>Module #13</td>
+  <td>Thermal rise rate calculation</td>
+</tr>
+<tr>
+  <td>High Sensitivity Sound Sensor</td>
+  <td>Module #37</td>
+  <td>Acoustic anomaly &amp; sound spike detection</td>
+</tr>
+<tr>
+  <td>RGB LED Module</td>
+  <td>Module #01</td>
+  <td>4-color status beacon</td>
+</tr>
+<tr>
+  <td>Active Buzzer Module</td>
+  <td>Module #11</td>
+  <td>Audible alert siren</td>
+</tr>
+<tr>
+  <td>5V Relay Module</td>
+  <td>Module #30</td>
+  <td>Emergency power cutoff or exhaust actuation</td>
+</tr>
+<tr>
+  <td>Breadboard &amp; Jumper Wires</td>
+  <td>Kit Accessories</td>
+  <td>Interconnections</td>
+</tr>
+</tbody></table>
+
+
+  <h2>2. Arduino Uno Wiring Schematic Table</h2>
+  <table>
+<thead><tr>
+  <th>Module</th>
+  <th>Sensor Pin</th>
+  <th>Arduino Uno Pin</th>
+  <th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td>Flame Sensor (#34)</td>
+  <td><span class="badge-pin">A0 (Analog)</span></td>
+  <td><span class="badge-pin">A0</span></td>
+  <td>Raw infrared light intensity</td>
+</tr>
+<tr>
+  <td></td>
+  <td><span class="badge-pin">D0 (Digital)</span></td>
+  <td><span class="badge-pin">D4</span></td>
+  <td>Fast threshold comparator</td>
+</tr>
+<tr>
+  <td></td>
+  <td>VCC / GND</td>
+  <td>5V / GND</td>
+  <td>Module Power</td>
+</tr>
+<tr>
+  <td>Analog Temp (#13)</td>
+  <td>S (Signal)</td>
+  <td><span class="badge-pin">A1</span></td>
+  <td>Temperature voltage reading</td>
+</tr>
+<tr>
+  <td></td>
+  <td>+ / -</td>
+  <td>5V / GND</td>
+  <td>Module Power</td>
+</tr>
+<tr>
+  <td>Sound Sensor (#37)</td>
+  <td><span class="badge-pin">A0 (Analog)</span></td>
+  <td><span class="badge-pin">A2</span></td>
+  <td>Sound wave envelope</td>
+</tr>
+<tr>
+  <td></td>
+  <td><span class="badge-pin">D0 (Digital)</span></td>
+  <td><span class="badge-pin">D2 (INT0)</span></td>
+  <td>Hardware interrupt on acoustic spike</td>
+</tr>
+<tr>
+  <td></td>
+  <td>VCC / GND</td>
+  <td>5V / GND</td>
+  <td>Module Power</td>
+</tr>
+<tr>
+  <td>RGB LED (#01)</td>
+  <td>R (Red)</td>
+  <td><span class="badge-pin">D9 (PWM)</span></td>
+  <td>Red color channel</td>
+</tr>
+<tr>
+  <td></td>
+  <td>G (Green)</td>
+  <td><span class="badge-pin">D10 (PWM)</span></td>
+  <td>Green color channel</td>
+</tr>
+<tr>
+  <td></td>
+  <td>B (Blue)</td>
+  <td><span class="badge-pin">D11 (PWM)</span></td>
+  <td>Blue color channel</td>
+</tr>
+<tr>
+  <td></td>
+  <td>- (GND)</td>
+  <td>GND</td>
+  <td>Common Cathode ground</td>
+</tr>
+<tr>
+  <td>Active Buzzer (#11)</td>
+  <td>S (Signal)</td>
+  <td><span class="badge-pin">D8</span></td>
+  <td>Siren audio control</td>
+</tr>
+<tr>
+  <td></td>
+  <td>- (GND)</td>
+  <td>GND</td>
+  <td>Buzzer ground</td>
+</tr>
+<tr>
+  <td>5V Relay (#30)</td>
+  <td>IN (Signal)</td>
+  <td><span class="badge-pin">D7</span></td>
+  <td>Active LOW relay trigger</td>
+</tr>
+<tr>
+  <td></td>
+  <td>VCC / GND</td>
+  <td>5V / GND</td>
+  <td>Relay coil power</td>
+</tr>
+</tbody></table>
+
+
+  <h2>3. Key Embedded Engineering Features</h2>
+  <div class="warning-box">
+    <ul>
+<li><strong>Calibration at Boot:</strong> When powered on, the system takes 10 samples of the room's ambient infrared radiation, baseline temperature, and background sound floor.</li>
+<li><strong>Rolling Derivative ($\frac{dT}{dt}$):</strong> Rather than waiting for temperature to reach an arbitrary high number, the system calculates the derivative of temperature over a sliding 1-second window. A heating rate greater than $0.5^\circ\text{C/sec}$ indicates active combustion nearby.</li>
+<li><strong>Hardware Interrupt Detection:</strong> The digital sound sensor is tied to hardware interrupt pin `D2`. Sudden acoustic spikes immediately register without polling delay.</li>
+<li><strong>Weighted Voting Decision:</strong></li>
+<p>$$\text{Composite Risk} = (0.50 \times \text{Flame}) + (0.35 \times \text{TempRate}) + (0.15 \times \text{Sound})$$</p>
+<li><strong>Actuator Isolation:</strong> If confirmed, Relay `#30` switches off AC power / engages exhaust, while the Active Buzzer `#11` and RGB LED `#01` deliver audio-visual alerts.</li>
+</ul>
+  </div>
+
+  <h2>4. Production Arduino Sketch (.ino)</h2>
+  <p>Complete C/C++ sketch ready to flash onto Arduino Uno. All timers are 100% non-blocking using <code>millis()</code>.</p>
+  
+  <div class="code-wrapper">
+    <button class="copy-btn" onclick="copyCode('sketchCode', this)">📋 Copy Sketch</button>
+    <pre><code id="sketchCode">/*
+ * Project 1: Environmental Hazard Guardian (Multi-Sensor Fusion)
+ * -------------------------------------------------------------
+ * Target Board: Arduino Uno (ATmega328P)
+ * Kit: Hosyond 45-in-1 Sensor Kit
+ * 
+ * Fused Sensors:
+ *  - Module #34: Flame Sensor (Analog AO &amp; Digital DO)
+ *  - Module #13: Analog Temperature Sensor (NTC Thermistor / LM35)
+ *  - Module #37: High Sensitivity Sound Detection Sensor (Analog AO &amp; Digital DO)
+ * 
+ * Actuators &amp; Indicators:
+ *  - Module #01: RGB LED (PWM pins for smooth color transitions)
+ *  - Module #11: Active Buzzer (Pulsed alarm siren)
+ *  - Module #30: 5V Relay Module (Emergency exhaust / Power cutoff)
+ * 
+ * Sensor Fusion Principle:
+ *  Traditional single-sensor alarms suffer from false positives and thermal lag:
+ *   - Optical IR flame sensors can trigger from direct sunlight or halogen reflections.
+ *   - Thermal sensors alone take seconds to minutes to heat up to an absolute limit.
+ *   - Acoustic sensors alone trigger on hand claps or ambient noises.
+ *  
+ *  This sketch implements a Multi-Factor Risk Assessment (Sensor Fusion):
+ *   1. Measures raw IR flame radiation intensity (Analog A0).
+ *   2. Computes the instantaneous temperature derivative dT/dt (rate of rise) on A1.
+ *   3. Analyzes sound pressure spikes on A2 and digital sound pulses on D2.
+ *   4. Combines inputs into a dynamic Risk Score (0 - 100%).
+ *   5. Executes non-blocking state machine: NORMAL -&gt; ADVISORY -&gt; WARNING -&gt; EMERGENCY.
+ */
+
+// ======================== PIN DEFINITIONS ========================
+// Sensors
+const int PIN_FLAME_ANALOG = A0;   // Flame Sensor AO (lower value = stronger flame)
+const int PIN_FLAME_DIGITAL = 4;   // Flame Sensor DO (active LOW)
+const int PIN_TEMP_ANALOG  = A1;   // Analog Temperature Sensor AO
+const int PIN_SOUND_ANALOG = A2;   // High Sensitivity Sound Sensor AO
+const int PIN_SOUND_DIGITAL = 2;   // Sound Sensor DO (interrupt capable on Uno)
+
+// Actuators
+const int PIN_RGB_RED      = 9;    // RGB LED Red (PWM)
+const int PIN_RGB_GREEN    = 10;   // RGB LED Green (PWM)
+const int PIN_RGB_BLUE     = 11;   // RGB LED Blue (PWM)
+const int PIN_BUZZER       = 8;    // Active Buzzer
+const int PIN_RELAY        = 7;    // 5V Relay (Active LOW on most kit relays)
+
+// ===================== SYSTEM STATES &amp; CONSTANTS =================
+enum SystemState {
+  STATE_NORMAL,    // All levels within ambient baseline
+  STATE_ADVISORY,  // Single parameter elevated; monitoring closely
+  STATE_WARNING,   // Multiple moderate anomalies detected
+  STATE_EMERGENCY  // Confirmed fire/explosion hazard; relay cut-off &amp; siren
+};
+
+SystemState currentState = STATE_NORMAL;
+
+// Calibration &amp; Baselines
+float baselineFlame = 1023.0;
+float baselineTemp  = 25.0;
+float baselineSound = 512.0;
+
+// Rolling Temperature Buffer for Derivative Calculation (dT/dt)
+const int TEMP_HISTORY_SIZE = 5;
+float tempHistory[TEMP_HISTORY_SIZE];
+int tempHistoryIdx = 0;
+unsigned long lastTempSampleTime = 0;
+const unsigned long TEMP_SAMPLE_INTERVAL = 200; // ms
+
+// Risk Weights (Sum = 1.0)
+const float WEIGHT_FLAME = 0.50;  // Optical flame detection weight
+const float WEIGHT_TEMP_RATE = 0.35; // Thermal rise rate weight
+const float WEIGHT_SOUND = 0.15;  // Acoustic anomaly weight
+
+// Sound Event Counter
+volatile unsigned long soundTriggerCount = 0;
+volatile unsigned long lastSoundInterruptTime = 0;
+
+// Non-blocking Timers
+unsigned long lastTelemetryTime = 0;
+const unsigned long TELEMETRY_INTERVAL = 500; // ms
+
+unsigned long lastBuzzerToggleTime = 0;
+bool buzzerState = false;
+
+// ======================== INTERRUPT SERVICE ======================
+void onSoundDetected() {
+  unsigned long now = millis();
+  if (now - lastSoundInterruptTime &gt; 50) { // Debounce 50ms
+    soundTriggerCount++;
+    lastSoundInterruptTime = now;
+  }
+}
+
+// ===================== HELPER FUNCTIONS ==========================
+// Convert NTC thermistor ADC reading to degrees Celsius (Steinhart-Hart approximation)
+float readTemperatureC(int pin) {
+  int rawADC = analogRead(pin);
+  if (rawADC &lt;= 0) rawADC = 1;
+  if (rawADC &gt;= 1023) rawADC = 1022;
+
+  // Assuming standard 10k NTC thermistor with 10k pull-up/down
+  float resistance = 10000.0 * (1023.0 / (float)rawADC - 1.0);
+  float steinhart;
+  steinhart = resistance / 10000.0;     // (R/Ro)
+  steinhart = log(steinhart);           // ln(R/Ro)
+  steinhart /= 3950.0;                  // 1/B * ln(R/Ro)
+  steinhart += 1.0 / (25.0 + 273.15);   // + (1/To)
+  steinhart = 1.0 / steinhart;          // Invert
+  steinhart -= 273.15;                  // Convert to Celsius
+
+  // Sanity check
+  if (steinhart &lt; -40.0 || steinhart &gt; 125.0) {
+    // Fallback linear scaling for simple analog temp modules (e.g. KY-013 / LM35)
+    return (rawADC * 5.0 / 1024.0) * 100.0;
+  }
+  return steinhart;
+}
+
+// Calculate rate of temperature change (deg C per second)
+float calculateTemperatureRate(float currentTemp) {
+  unsigned long now = millis();
+  if (now - lastTempSampleTime &gt;= TEMP_SAMPLE_INTERVAL) {
+    lastTempSampleTime = now;
+    tempHistory[tempHistoryIdx] = currentTemp;
+    tempHistoryIdx = (tempHistoryIdx + 1) % TEMP_HISTORY_SIZE;
+  }
+
+  // Calculate delta over buffer
+  int oldestIdx = tempHistoryIdx; // Oldest entry is current write position
+  float oldestTemp = tempHistory[oldestIdx];
+  float dtSeconds = (TEMP_HISTORY_SIZE * TEMP_SAMPLE_INTERVAL) / 1000.0;
+  float rate = (currentTemp - oldestTemp) / dtSeconds;
+  return (rate &gt; 0) ? rate : 0.0; // We only care about positive heating rate
+}
+
+// Set RGB LED Color (Common Cathode: 255=ON, 0=OFF)
+void setRgbColor(byte r, byte g, byte b) {
+  analogWrite(PIN_RGB_RED, r);
+  analogWrite(PIN_RGB_GREEN, g);
+  analogWrite(PIN_RGB_BLUE, b);
+}
+
+// ======================== SETUP ==================================
+void setup() {
+  Serial.begin(115200);
+  while (!Serial &amp;&amp; millis() &lt; 3000); // Allow USB initialization
+
+  Serial.println(F(&quot;\n=======================================================&quot;));
+  Serial.println(F(&quot;  PROJECT 1: MULTI-SENSOR ENVIRONMENTAL HAZARD GUARDIAN&quot;));
+  Serial.println(F(&quot;=======================================================&quot;));
+
+  // Configure Pins
+  pinMode(PIN_FLAME_DIGITAL, INPUT);
+  pinMode(PIN_SOUND_DIGITAL, INPUT);
+  pinMode(PIN_RGB_RED, OUTPUT);
+  pinMode(PIN_RGB_GREEN, OUTPUT);
+  pinMode(PIN_RGB_BLUE, OUTPUT);
+  pinMode(PIN_BUZZER, OUTPUT);
+  pinMode(PIN_RELAY, OUTPUT);
+
+  // Initial Safe States
+  digitalWrite(PIN_BUZZER, LOW);
+  digitalWrite(PIN_RELAY, HIGH); // Relay OFF (standard active LOW kit relay)
+  setRgbColor(0, 255, 0);        // Green = System Initializing
+
+  // Attach Hardware Interrupt for high-speed acoustic spike detection
+  attachInterrupt(digitalPinToInterrupt(PIN_SOUND_DIGITAL), onSoundDetected, FALLING);
+
+  // Baseline Calibration (sample 10 readings over 500ms)
+  Serial.print(F(&quot;Calibrating ambient baselines... &quot;));
+  float flameSum = 0;
+  float tempSum = 0;
+  float soundSum = 0;
+  for (int i = 0; i &lt; 10; i++) {
+    flameSum += analogRead(PIN_FLAME_ANALOG);
+    tempSum  += readTemperatureC(PIN_TEMP_ANALOG);
+    soundSum += analogRead(PIN_SOUND_ANALOG);
+    delay(50);
+  }
+  baselineFlame = flameSum / 10.0;
+  baselineTemp  = tempSum / 10.0;
+  baselineSound = soundSum / 10.0;
+
+  for (int i = 0; i &lt; TEMP_HISTORY_SIZE; i++) {
+    tempHistory[i] = baselineTemp;
+  }
+
+  Serial.println(F(&quot;DONE&quot;));
+  Serial.print(F(&quot;  -&gt; Ambient Flame Raw ADC: &quot;)); Serial.println(baselineFlame);
+  Serial.print(F(&quot;  -&gt; Ambient Temp:          &quot;)); Serial.print(baselineTemp); Serial.println(F(&quot; °C&quot;));
+  Serial.print(F(&quot;  -&gt; Ambient Sound Raw ADC: &quot;)); Serial.println(baselineSound);
+  Serial.println(F(&quot;Guardian online. Monitoring sensor fusion matrix...\n&quot;));
+}
+
+// ======================== MAIN LOOP ==============================
+void loop() {
+  unsigned long currentMillis = millis();
+
+  // 1. Read Raw Sensors
+  int rawFlame = analogRead(PIN_FLAME_ANALOG);
+  bool flameDigitalActive = (digitalRead(PIN_FLAME_DIGITAL) == LOW);
+  float currentTemp = readTemperatureC(PIN_TEMP_ANALOG);
+  float tempRate = calculateTemperatureRate(currentTemp); // °C / sec
+  int rawSound = analogRead(PIN_SOUND_ANALOG);
+  int soundDeviation = abs(rawSound - (int)baselineSound);
+
+  // 2. Individual Risk Sub-scores Normalized (0.0 to 1.0)
+  // Flame: ADC drops when flame is detected (1023 = dark, &lt; 100 = fire close)
+  float flameScore = 0.0;
+  if (rawFlame &lt; baselineFlame) {
+    flameScore = (baselineFlame - (float)rawFlame) / baselineFlame;
+    if (flameScore &gt; 1.0) flameScore = 1.0;
+  }
+  if (flameDigitalActive &amp;&amp; flameScore &lt; 0.6) flameScore = 0.6; // Digital trigger guarantees min 60%
+
+  // Thermal Rise Rate: &gt; 0.5 °C/sec is suspicious, &gt; 2.0 °C/sec is critical
+  float tempRateScore = (tempRate &gt; 0) ? (tempRate / 2.0) : 0.0;
+  if (tempRateScore &gt; 1.0) tempRateScore = 1.0;
+
+  // Sound Anomaly Score
+  float soundScore = (float)soundDeviation / 350.0;
+  if (soundTriggerCount &gt; 0) {
+    soundScore += (soundTriggerCount * 0.2);
+    soundTriggerCount = 0; // Reset after consuming
+  }
+  if (soundScore &gt; 1.0) soundScore = 1.0;
+
+  // 3. Sensor Fusion Algorithm: Weighted Multi-Factor Score
+  float compositeRisk = (flameScore * WEIGHT_FLAME) + 
+                        (tempRateScore * WEIGHT_TEMP_RATE) + 
+                        (soundScore * WEIGHT_SOUND);
+  
+  // Fast-track Rule: If flame optical signature is extremely strong (&gt;0.85) AND temp is rising, jump to 1.0
+  if (flameScore &gt; 0.85 &amp;&amp; tempRate &gt; 0.2) {
+    compositeRisk = max(compositeRisk, 0.95);
+  }
+
+  // 4. State Machine Evaluation
+  if (compositeRisk &lt; 0.25) {
+    currentState = STATE_NORMAL;
+  } else if (compositeRisk &lt; 0.55) {
+    currentState = STATE_ADVISORY;
+  } else if (compositeRisk &lt; 0.80) {
+    currentState = STATE_WARNING;
+  } else {
+    currentState = STATE_EMERGENCY;
+  }
+
+  // 5. Actuator Management based on State
+  switch (currentState) {
+    case STATE_NORMAL:
+      setRgbColor(0, 255, 0);        // Solid Green
+      digitalWrite(PIN_BUZZER, LOW);
+      digitalWrite(PIN_RELAY, HIGH); // Safe: Relay idle
+      break;
+
+    case STATE_ADVISORY:
+      setRgbColor(0, 180, 255);      // Cyan / Cool Blue
+      digitalWrite(PIN_BUZZER, LOW);
+      digitalWrite(PIN_RELAY, HIGH);
+      break;
+
+    case STATE_WARNING:
+      setRgbColor(255, 140, 0);      // Amber / Orange
+      digitalWrite(PIN_RELAY, HIGH); // Keep monitoring
+      // Intermittent soft beep every 500ms
+      if (currentMillis - lastBuzzerToggleTime &gt; 500) {
+        lastBuzzerToggleTime = currentMillis;
+        buzzerState = !buzzerState;
+        digitalWrite(PIN_BUZZER, buzzerState ? HIGH : LOW);
+      }
+      break;
+
+    case STATE_EMERGENCY:
+      // Rapid Flashing Red &amp; Pulsed Loud Siren
+      if (currentMillis - lastBuzzerToggleTime &gt; 120) {
+        lastBuzzerToggleTime = currentMillis;
+        buzzerState = !buzzerState;
+        digitalWrite(PIN_BUZZER, buzzerState ? HIGH : LOW);
+        if (buzzerState) {
+          setRgbColor(255, 0, 0);    // Bright Red
+        } else {
+          setRgbColor(0, 0, 0);      // Off (Strobe effect)
+        }
+      }
+      // Trigger Relay to cut power / engage emergency ventilation
+      digitalWrite(PIN_RELAY, LOW); // Active
+      break;
+  }
+
+  // 6. Serial Telemetry Broadcast (Every 500ms)
+  if (currentMillis - lastTelemetryTime &gt;= TELEMETRY_INTERVAL) {
+    lastTelemetryTime = currentMillis;
+    Serial.print(F(&quot;[TELEMETRY] Flame: &quot;));
+    Serial.print(rawFlame);
+    Serial.print(F(&quot; (&quot;)); Serial.print((int)(flameScore * 100)); Serial.print(F(&quot;%) | &quot;));
+    Serial.print(F(&quot;Temp: &quot;));
+    Serial.print(currentTemp, 1);
+    Serial.print(F(&quot;C (Rate: &quot;)); Serial.print(tempRate, 2); Serial.print(F(&quot;C/s) | &quot;));
+    Serial.print(F(&quot;Sound: &quot;));
+    Serial.print(rawSound);
+    Serial.print(F(&quot; | Risk: &quot;));
+    Serial.print((int)(compositeRisk * 100));
+    Serial.print(F(&quot;% -&gt; STATE: &quot;));
+
+    switch (currentState) {
+      case STATE_NORMAL:    Serial.println(F(&quot;NORMAL [OK]&quot;)); break;
+      case STATE_ADVISORY:  Serial.println(F(&quot;ADVISORY [CHECK]&quot;)); break;
+      case STATE_WARNING:   Serial.println(F(&quot;WARNING [CAUTION]&quot;)); break;
+      case STATE_EMERGENCY: Serial.println(F(&quot;CRITICAL EMERGENCY! [EVACUATE]&quot;)); break;
+    }
+  }
+}
+</code></pre>
+  </div>
+</div>
+
+
+<script>
+function copyCode(id, btn) {
+  const code = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    const orig = btn.innerText;
+    btn.innerText = '✅ Copied!';
+    btn.style.color = '#10b981';
+    btn.style.borderColor = '#10b981';
+    setTimeout(() => {
+      btn.innerText = orig;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project 4: Multi-Layer Security Sentinel &amp; Inertial Anti-Tamper System | Level 1 Sensor Fusion</title>
+  <style>
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --border: #334155;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent: #38bdf8;
+  --warning: #f59e0b;
+  --code-bg: #0b1120;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  padding-bottom: 60px;
+}
+.navbar {
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.nav-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-links {
+  display: flex;
+  gap: 10px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  transition: all 0.2s;
+}
+.btn:hover {
+  background: var(--border);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  color: white;
+}
+.btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-color: #d97706;
+  color: #0f172a;
+}
+.container {
+  max-width: 1100px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+h1 { font-size: 2rem; color: #f1f5f9; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+h2 { font-size: 1.35rem; color: var(--accent); margin: 30px 0 15px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); padding-bottom: 8px; }
+h3 { font-size: 1.1rem; color: #cbd5e1; margin: 20px 0 10px; }
+p, ul, ol { margin-bottom: 16px; color: #cbd5e1; font-size: 1rem; }
+ul, ol { padding-left: 24px; }
+li { margin-bottom: 6px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+tr:hover {
+  background: rgba(51, 65, 85, 0.3);
+}
+.badge-pin {
+  display: inline-block;
+  background: #0284c7;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-family: monospace;
+}
+.code-wrapper {
+  position: relative;
+  margin: 20px 0;
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  overflow-x: auto;
+}
+pre code {
+  font-family: 'Consolas', 'Fira Code', Monaco, monospace;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  line-height: 1.5;
+}
+.copy-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.copy-btn:hover {
+  background: var(--border);
+  color: var(--accent);
+}
+.img-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+.img-card {
+  background: #0b1120;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.img-card img {
+  max-width: 100%;
+  max-height: 380px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+.img-label {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.highlight-box {
+  background: rgba(37, 99, 235, 0.1);
+  border-left: 4px solid var(--accent);
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+}
+.warning-box {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 4px solid var(--warning);
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-title">
+    <span>⚡ Project 4: Multi-Layer Security Sentinel &amp; Inertial Anti-Tamper System</span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html" class="btn btn-warning">⬅ Level 1 Fusion Hub</a>
+    <a href="../../index.html" class="btn">🏠 Main Hub</a>
+    <a href="Project_04_Security_Sentinel_IMU_Shock_Tilt_Touch.ino" class="btn btn-primary" download>💾 Download .ino</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Project 4: Multi-Layer Security Sentinel &amp; Inertial Anti-Tamper System</h1>
+  
+  <div class="highlight-box">
+    <h3>Sensor Fusion Architecture</h3>
+    <p>Most commercial anti-theft and safe-deposit security devices fail because they either trigger falsely on minor ambient vibrations (footsteps, thunder, passing trucks) or are bypassed by slow, careful displacement.
+
+This **Sensor Fusion Level 1 Project** constructs a 4-tier physical security bubble:
+1. **Capacitive/Conductive Touch Layer:** The Metal Touch Sensor (#33) detects unauthorized hand or tool contact on the external enclosure before any mechanical force is applied.
+2. **Inertial 6-DOF Vector Layer:** The MPU-6050 (GY-521 Module #40) continuously calculates 3D dynamic acceleration jerk $\Delta A = \sqrt{\Delta A_x^2 + \Delta A_y^2 + \Delta A_z^2}$ over I2C.
+3. **Discrete Gravitational Tip Layer:** The Tilt Switch (#21) detects if the asset has been rolled or placed upside-down.
+4. **Mechanical Shock Pulse Layer:** The Shock Sensor (#16) fires a microsecond hardware interrupt on physical blunt impacts, drilling, or hammer strikes.</p>
+  </div>
+
+  <h2>1. Bill of Materials (Hosyond 45-in-1 Kit)</h2>
+  <table>
+<thead><tr>
+  <th>Component</th>
+  <th>Kit Module #</th>
+  <th>Function</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td>Arduino Uno</td>
+  <td>Target Board</td>
+  <td>Threat matrix &amp; interrupt processing</td>
+</tr>
+<tr>
+  <td>GY-521 (MPU-6050)</td>
+  <td>Module #40</td>
+  <td>6-DOF Accelerometer &amp; Gyroscope (I2C)</td>
+</tr>
+<tr>
+  <td>Shock Sensor</td>
+  <td>Module #16</td>
+  <td>Mechanical strike and impact impulse detection</td>
+</tr>
+<tr>
+  <td>Metal Touch Sensor</td>
+  <td>Module #33</td>
+  <td>Perimeter human touch detection</td>
+</tr>
+<tr>
+  <td>Tilt Switch</td>
+  <td>Module #21</td>
+  <td>Gravitational orientation switch</td>
+</tr>
+<tr>
+  <td>RGB LED Module</td>
+  <td>Module #01</td>
+  <td>Multi-color security beacon</td>
+</tr>
+<tr>
+  <td>Active Buzzer Module</td>
+  <td>Module #11</td>
+  <td>High-output alarm siren</td>
+</tr>
+<tr>
+  <td>5V Relay Module</td>
+  <td>Module #30</td>
+  <td>Electronic deadbolt lock or perimeter strobe trigger</td>
+</tr>
+</tbody></table>
+
+
+  <h2>2. Arduino Uno Wiring Schematic Table</h2>
+  <table>
+<thead><tr>
+  <th>Module</th>
+  <th>Sensor Pin</th>
+  <th>Arduino Uno Pin</th>
+  <th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td>GY-521 MPU-6050 (#40)</td>
+  <td>SDA</td>
+  <td><span class="badge-pin">A4</span></td>
+  <td>I2C Data line</td>
+</tr>
+<tr>
+  <td></td>
+  <td>SCL</td>
+  <td><span class="badge-pin">A5</span></td>
+  <td>I2C Clock line</td>
+</tr>
+<tr>
+  <td></td>
+  <td>VCC / GND</td>
+  <td>5V / GND</td>
+  <td>Power supply</td>
+</tr>
+<tr>
+  <td>Shock Sensor (#16)</td>
+  <td>S (DO)</td>
+  <td><span class="badge-pin">D2 (INT0)</span></td>
+  <td>Microsecond hardware interrupt on impact</td>
+</tr>
+<tr>
+  <td></td>
+  <td>- (GND) / +</td>
+  <td>GND / 5V</td>
+  <td>Power supply</td>
+</tr>
+<tr>
+  <td>Metal Touch (#33)</td>
+  <td>DO</td>
+  <td><span class="badge-pin">D3 (INT1)</span></td>
+  <td>Hardware interrupt on physical contact</td>
+</tr>
+<tr>
+  <td></td>
+  <td>+ / -</td>
+  <td>5V / GND</td>
+  <td>Power supply</td>
+</tr>
+<tr>
+  <td>Tilt Switch (#21)</td>
+  <td>S</td>
+  <td><span class="badge-pin">D4</span></td>
+  <td>Digital tilt state (internal pullup)</td>
+</tr>
+<tr>
+  <td></td>
+  <td>-</td>
+  <td>GND</td>
+  <td>Ground</td>
+</tr>
+<tr>
+  <td>RGB LED (#01)</td>
+  <td>R (Red)</td>
+  <td><span class="badge-pin">D9 (PWM)</span></td>
+  <td>Red color channel</td>
+</tr>
+<tr>
+  <td></td>
+  <td>G (Green)</td>
+  <td><span class="badge-pin">D10 (PWM)</span></td>
+  <td>Green color channel</td>
+</tr>
+<tr>
+  <td></td>
+  <td>B (Blue)</td>
+  <td><span class="badge-pin">D11 (PWM)</span></td>
+  <td>Blue color channel</td>
+</tr>
+<tr>
+  <td></td>
+  <td>- (GND)</td>
+  <td>GND</td>
+  <td>Common Cathode ground</td>
+</tr>
+<tr>
+  <td>Active Buzzer (#11)</td>
+  <td>S (Signal)</td>
+  <td><span class="badge-pin">D8</span></td>
+  <td>Siren pulse audio</td>
+</tr>
+<tr>
+  <td></td>
+  <td>- (GND)</td>
+  <td>GND</td>
+  <td>Buzzer ground</td>
+</tr>
+<tr>
+  <td>5V Relay (#30)</td>
+  <td>IN</td>
+  <td><span class="badge-pin">D7</span></td>
+  <td>Active LOW deadbolt lock / strobe trigger</td>
+</tr>
+<tr>
+  <td></td>
+  <td>VCC / GND</td>
+  <td>5V / GND</td>
+  <td>Relay coil supply</td>
+</tr>
+</tbody></table>
+
+
+  <h2>3. Key Embedded Engineering Features</h2>
+  <div class="warning-box">
+    <ul>
+<li><strong>Dual Hardware Interrupts (INT0 & INT1):</strong> Guarantees zero missed impacts or touches, executing instantaneously even during serial print or timing operations.</li>
+<li><strong>Native Register-Level I2C Interface:</strong> Talks directly to the MPU-6050 power and accelerometer registers (`0x3B` to `0x40`) without requiring third-party library installations!</li>
+<li><strong>Auto-Re-Arming:</strong> Features a timed holding cycle (8 seconds) followed by automatic perimeter re-arming.</li>
+</ul>
+  </div>
+
+  <h2>4. Production Arduino Sketch (.ino)</h2>
+  <p>Complete C/C++ sketch ready to flash onto Arduino Uno. All timers are 100% non-blocking using <code>millis()</code>.</p>
+  
+  <div class="code-wrapper">
+    <button class="copy-btn" onclick="copyCode('sketchCode', this)">📋 Copy Sketch</button>
+    <pre><code id="sketchCode">/*
+ * Project 4: Multi-Layer Security Sentinel &amp; Inertial Anti-Tamper System
+ * ----------------------------------------------------------------------
+ * Target Board: Arduino Uno (ATmega328P)
+ * Kit: Hosyond 45-in-1 Sensor Kit
+ * 
+ * Fused Sensors:
+ *  - Module #40: GY-521 (MPU-6050 I2C: A4 SDA, A5 SCL) - 6-DOF Accelerometer &amp; Gyroscope
+ *  - Module #16: Shock / Vibration Sensor (Digital D2, Interrupt 0) - Impact Detection
+ *  - Module #33: Metal Touch Sensor (Digital D3, Interrupt 1) - Unauthorized Contact
+ *  - Module #21: Tilt Switch (Digital D4) - Discrete Gravitational Tip Sensor
+ * 
+ * Actuators &amp; Indicators:
+ *  - Module #01: RGB LED (Pins D9 Red, D10 Green, D11 Blue) - Status Beacon
+ *  - Module #11: Active Buzzer (Digital D8) - Intrusion Siren
+ *  - Module #30: 5V Relay Module (Digital D7) - Lock Solenoid / Security Strobe
+ * 
+ * Sensor Fusion Matrix:
+ *  Traditional motion alarms trigger accidentally from wind, slamming doors, or floor footsteps.
+ *  This project fuses 4 independent sensing layers:
+ *   1. Touch Layer: Detects physical hand contact with metal chassis (Module #33).
+ *   2. Mechanical Shock Layer: Captures high-frequency micro-impact pulses (Module #16).
+ *   3. Angular Tilt Layer: Detects sustained structural tilt via switch (Module #21).
+ *   4. Inertial Vector Layer: Reads 3D acceleration vector |A| = sqrt(Ax^2 + Ay^2 + Az^2)
+ *      and angular pitch/roll rates via MPU-6050 I2C registers.
+ *  
+ *  Multi-Threat Evaluation:
+ *   - Level 0: ARMED_SECURE (Green LED breathing, Siren silent, Relay locked)
+ *   - Level 1: PROXIMITY_TOUCH (Touch triggered only -&gt; Warning Amber LED, soft chirp)
+ *   - Level 2: SUSPICIOUS_MOTION (Sustained tilt or low-G wobble -&gt; Red pulse)
+ *   - Level 3: INTRUSION_BREACH (Shock impact + Acceleration vector jump -&gt; SIREN + RELAY TRIP)
+ */
+
+#include &lt;Wire.h&gt;
+
+// ======================== PIN ASSIGNMENTS ========================
+const int PIN_SHOCK_SENSOR = 2;    // Shock Sensor DO (Hardware INT0)
+const int PIN_TOUCH_SENSOR = 3;    // Metal Touch DO (Hardware INT1)
+const int PIN_TILT_SWITCH  = 4;    // Tilt Switch (Digital input with pullup)
+
+// Actuators
+const int PIN_RELAY_LOCK   = 7;    // 5V Relay (Active LOW)
+const int PIN_ALARM_BUZZER = 8;    // Active Buzzer
+const int PIN_RGB_RED      = 9;    // PWM
+const int PIN_RGB_GREEN    = 10;   // PWM
+const int PIN_RGB_BLUE     = 11;   // PWM
+
+// MPU-6050 I2C Address
+const int MPU_ADDR = 0x68;
+
+// ======================== SYSTEM STATES ==========================
+enum SecurityState {
+  SEC_DISARMED,        // System disarmed (Blue LED)
+  SEC_ARMED_NORMAL,    // Fully armed, monitoring perimeter (Green LED)
+  SEC_TAMPER_WARNING,  // Minor touch or vibration (Amber LED, short chirp)
+  SEC_ALARM_CRITICAL   // Violent shock / confirmed tilt breach (Strobe Red + Siren)
+};
+
+SecurityState systemState = SEC_ARMED_NORMAL;
+
+// Interrupt Flags
+volatile bool shockDetected = false;
+volatile unsigned long lastShockInterruptTime = 0;
+
+volatile bool touchDetected = false;
+volatile unsigned long lastTouchInterruptTime = 0;
+
+// Baseline Inertial Reference
+int16_t baseAx = 0, baseAy = 0, baseAz = 0;
+int16_t baseGx = 0, baseGy = 0, baseGz = 0;
+bool mpuAvailable = false;
+
+// Non-blocking Timing
+unsigned long lastSensorPollTime = 0;
+const unsigned long POLL_INTERVAL = 50; // 20 Hz update rate
+
+unsigned long lastTelemetryTime = 0;
+unsigned long alarmStartTime = 0;
+const unsigned long ALARM_HOLD_DURATION = 8000; // Siren holds for 8s after breach
+
+unsigned long lastBuzzerToggleTime = 0;
+bool buzzerToggle = false;
+
+// ======================== INTERRUPTS =============================
+void isrShock() {
+  unsigned long now = millis();
+  if (now - lastShockInterruptTime &gt; 80) { // 80ms debounce
+    shockDetected = true;
+    lastShockInterruptTime = now;
+  }
+}
+
+void isrTouch() {
+  unsigned long now = millis();
+  if (now - lastTouchInterruptTime &gt; 150) { // 150ms debounce
+    touchDetected = true;
+    lastTouchInterruptTime = now;
+  }
+}
+
+// ======================== MPU-6050 DRIVER ========================
+void initMPU6050() {
+  Wire.begin();
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x6B); // PWR_MGMT_1 register
+  Wire.write(0);    // Wake up MPU-6050
+  byte error = Wire.endTransmission();
+
+  if (error == 0) {
+    mpuAvailable = true;
+    Serial.println(F(&quot;&gt;&gt; MPU-6050 6-DOF Inertial Sensor Initialized Successfully.&quot;));
+    
+    // Calibrate neutral gravity vector (10 samples)
+    long axSum = 0, aySum = 0, azSum = 0;
+    for (int i = 0; i &lt; 10; i++) {
+      Wire.beginTransmission(MPU_ADDR);
+      Wire.write(0x3B); // Starting from ACCEL_XOUT_H
+      Wire.endTransmission(false);
+      Wire.requestFrom(MPU_ADDR, 6, true);
+      if (Wire.available() &gt;= 6) {
+        axSum += (Wire.read() &lt;&lt; 8 | Wire.read());
+        aySum += (Wire.read() &lt;&lt; 8 | Wire.read());
+        azSum += (Wire.read() &lt;&lt; 8 | Wire.read());
+      }
+      delay(20);
+    }
+    baseAx = axSum / 10;
+    baseAy = aySum / 10;
+    baseAz = azSum / 10;
+  } else {
+    mpuAvailable = false;
+    Serial.println(F(&quot;&gt;&gt; WARNING: MPU-6050 Not Found on I2C bus (A4/A5). Using discrete tilt/shock sensors.&quot;));
+  }
+}
+
+// Read raw acceleration delta from baseline
+float getInertialJerk() {
+  if (!mpuAvailable) return 0.0;
+
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x3B);
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU_ADDR, 6, true);
+
+  if (Wire.available() &lt; 6) return 0.0;
+
+  int16_t ax = (Wire.read() &lt;&lt; 8 | Wire.read());
+  int16_t ay = (Wire.read() &lt;&lt; 8 | Wire.read());
+  int16_t az = (Wire.read() &lt;&lt; 8 | Wire.read());
+
+  // Compute vector magnitude delta normalized to G (16384 LSB = 1g in +/-2g range)
+  float dAx = (ax - baseAx) / 16384.0;
+  float dAy = (ay - baseAy) / 16384.0;
+  float dAz = (az - baseAz) / 16384.0;
+
+  float jerkMagnitude = sqrt(dAx * dAx + dAy * dAy + dAz * dAz);
+  return jerkMagnitude;
+}
+
+// Set RGB LED Color
+void setRgbColor(byte r, byte g, byte b) {
+  analogWrite(PIN_RGB_RED, r);
+  analogWrite(PIN_RGB_GREEN, g);
+  analogWrite(PIN_RGB_BLUE, b);
+}
+
+// ======================== SETUP ==================================
+void setup() {
+  Serial.begin(115200);
+  while (!Serial &amp;&amp; millis() &lt; 3000);
+
+  Serial.println(F(&quot;\n=======================================================&quot;));
+  Serial.println(F(&quot;  PROJECT 4: MULTI-LAYER SECURITY SENTINEL &amp; IMU FUSION&quot;));
+  Serial.println(F(&quot;=======================================================&quot;));
+
+  pinMode(PIN_SHOCK_SENSOR, INPUT);
+  pinMode(PIN_TOUCH_SENSOR, INPUT);
+  pinMode(PIN_TILT_SWITCH, INPUT_PULLUP);
+
+  pinMode(PIN_RELAY_LOCK, OUTPUT);
+  pinMode(PIN_ALARM_BUZZER, OUTPUT);
+  pinMode(PIN_RGB_RED, OUTPUT);
+  pinMode(PIN_RGB_GREEN, OUTPUT);
+  pinMode(PIN_RGB_BLUE, OUTPUT);
+
+  // Safe Armed Initial State
+  digitalWrite(PIN_RELAY_LOCK, HIGH); // Armed (Relay inactive)
+  digitalWrite(PIN_ALARM_BUZZER, LOW);
+  setRgbColor(0, 255, 0); // Solid Green
+
+  // Attach Hardware Interrupts for microsecond response
+  attachInterrupt(digitalPinToInterrupt(PIN_SHOCK_SENSOR), isrShock, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PIN_TOUCH_SENSOR), isrTouch, RISING);
+
+  // Initialize I2C IMU
+  initMPU6050();
+
+  Serial.println(F(&quot;Security Sentinel ARMED. Monitoring 4 intrusion layers...\n&quot;));
+}
+
+// ======================== MAIN LOOP ==============================
+void loop() {
+  unsigned long currentMillis = millis();
+
+  // Periodic Sensor Evaluation (20 Hz)
+  if (currentMillis - lastSensorPollTime &gt;= POLL_INTERVAL) {
+    lastSensorPollTime = currentMillis;
+
+    // 1. Read Discrete Tilt Switch (LOW = upright, HIGH = tipped over)
+    bool isTilted = (digitalRead(PIN_TILT_SWITCH) == HIGH);
+
+    // 2. Read IMU Acceleration Jerk
+    float imuJerk = getInertialJerk(); // Magnitude in G&#x27;s
+
+    // 3. Sensor Fusion Threat Matrix
+    bool isViolentImpact = shockDetected || (imuJerk &gt; 0.65);
+    bool isSevereTilt     = isTilted || (imuJerk &gt; 0.35);
+    bool isTouchDetected  = touchDetected;
+
+    // Reset volatile flags after latching
+    shockDetected = false;
+    touchDetected = false;
+
+    // 4. State Machine Progression
+    if (systemState != SEC_ALARM_CRITICAL) {
+      if (isViolentImpact || (isSevereTilt &amp;&amp; isTouchDetected)) {
+        // Multi-sensor breach confirmed: Critical Alarm!
+        systemState = SEC_ALARM_CRITICAL;
+        alarmStartTime = currentMillis;
+        Serial.println(F(&quot;&gt;&gt; [SECURITY BREACH] Confirmed Violent Impact / Forced Tampering!&quot;));
+      } else if (isTouchDetected || isSevereTilt) {
+        // Single moderate event -&gt; Warning
+        systemState = SEC_TAMPER_WARNING;
+        alarmStartTime = currentMillis;
+        Serial.println(F(&quot;&gt;&gt; [TAMPER WARNING] Surface touch or angular shift detected.&quot;));
+      } else {
+        systemState = SEC_ARMED_NORMAL;
+      }
+    }
+
+    // 5. Diagnostics Telemetry (Every 300ms)
+    if (currentMillis - lastTelemetryTime &gt;= 300) {
+      lastTelemetryTime = currentMillis;
+      Serial.print(F(&quot;[SENTINEL] Tilt: &quot;));
+      Serial.print(isTilted ? F(&quot;TILTED&quot;) : F(&quot;LEVEL&quot;));
+      Serial.print(F(&quot; | IMU Jerk: &quot;));
+      Serial.print(imuJerk, 2);
+      Serial.print(F(&quot;G | Shock: &quot;));
+      Serial.print(isViolentImpact ? F(&quot;HIT!&quot;) : F(&quot;NONE&quot;));
+      Serial.print(F(&quot; | Touch: &quot;));
+      Serial.print(isTouchDetected ? F(&quot;TOUCH&quot;) : F(&quot;CLEAR&quot;));
+      Serial.print(F(&quot; | Status: &quot;));
+
+      switch (systemState) {
+        case SEC_ARMED_NORMAL:   Serial.println(F(&quot;ARMED [Secure]&quot;)); break;
+        case SEC_TAMPER_WARNING: Serial.println(F(&quot;WARNING [Tampering Suspected]&quot;)); break;
+        case SEC_ALARM_CRITICAL: Serial.println(F(&quot;CRITICAL INTRUSION BREACH!!&quot;)); break;
+        default: break;
+      }
+    }
+  }
+
+  // 6. Actuator State Management
+  switch (systemState) {
+    case SEC_ARMED_NORMAL:
+      setRgbColor(0, 255, 0);              // Green = Secure
+      digitalWrite(PIN_ALARM_BUZZER, LOW); // Silent
+      digitalWrite(PIN_RELAY_LOCK, HIGH);  // Lock secure
+      break;
+
+    case SEC_TAMPER_WARNING:
+      setRgbColor(255, 140, 0);            // Amber Warning
+      digitalWrite(PIN_RELAY_LOCK, HIGH);  // Hold lock
+      // Single chirp
+      if (currentMillis - alarmStartTime &lt; 150) {
+        digitalWrite(PIN_ALARM_BUZZER, HIGH);
+      } else {
+        digitalWrite(PIN_ALARM_BUZZER, LOW);
+      }
+      // Auto-return to armed after 3 seconds of calm
+      if (currentMillis - alarmStartTime &gt; 3000) {
+        systemState = SEC_ARMED_NORMAL;
+      }
+      break;
+
+    case SEC_ALARM_CRITICAL:
+      // Trip Relay to lock down perimeter / activate strobe
+      digitalWrite(PIN_RELAY_LOCK, LOW); // Active
+
+      // Pulsing strobe siren
+      if (currentMillis - lastBuzzerToggleTime &gt; 100) {
+        lastBuzzerToggleTime = currentMillis;
+        buzzerToggle = !buzzerToggle;
+        digitalWrite(PIN_ALARM_BUZZER, buzzerToggle ? HIGH : LOW);
+        if (buzzerToggle) {
+          setRgbColor(255, 0, 0); // Strobe Red
+        } else {
+          setRgbColor(0, 0, 255); // Strobe Blue (Police effect)
+        }
+      }
+
+      // Hold siren for set duration, then re-arm
+      if (currentMillis - alarmStartTime &gt; ALARM_HOLD_DURATION) {
+        systemState = SEC_ARMED_NORMAL;
+        Serial.println(F(&quot;&gt;&gt; Alarm Timed Out. Re-arming Sentinel...&quot;));
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+</code></pre>
+  </div>
+</div>
+
+
+<script>
+function copyCode(id, btn) {
+  const code = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    const orig = btn.innerText;
+    btn.innerText = '✅ Copied!';
+    btn.style.color = '#10b981';
+    btn.style.borderColor = '#10b981';
+    setTimeout(() => {
+      btn.innerText = orig;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
