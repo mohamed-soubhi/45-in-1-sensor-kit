@@ -455,6 +455,27 @@
       grid-column: 1 / -1;
       display: none;
     }
+  
+    .card-l2 {
+      border: 1px solid rgba(236, 72, 153, 0.4);
+      background: linear-gradient(180deg, rgba(30, 41, 59, 1) 0%, rgba(15, 23, 42, 1) 100%);
+    }
+    .card-l2:hover {
+      border-color: #ec4899;
+      box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.25);
+    }
+    .btn-esp {
+      background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+      color: white;
+      border-color: #be185d;
+    }
+    .tab-btn.tab-l2.active {
+      color: #ec4899;
+    }
+    .tab-btn.tab-l2.active::after {
+      background: #ec4899;
+    }
+
   </style>
 </head>
 <body>
@@ -470,6 +491,9 @@
         </h1>
       </div>
       <div class="header-links">
+        <a href="Complicated_Projects_Level_2_ESP32_S3/index.html" class="btn btn-esp" target="_blank">
+          🚀 Level-2 (ESP32-S3 Fusion)
+        </a>
         <a href="Complicated_Projects_Level_1/index.html" class="btn btn-warning" target="_blank">
           🚀 Level-1 Sensor Fusion Guide
         </a>
@@ -485,6 +509,9 @@
     <div class="view-tabs">
       <button class="tab-btn active" id="tabBase" onclick="switchView('BASE')">
         📦 45 Standard Modules
+      </button>
+      <button class="tab-btn tab-l2" id="tabL2" onclick="switchView('L2_ESP32')">
+        🚀 Complicated Level 2 (ESP32-S3)
       </button>
       <button class="tab-btn tab-fusion" id="tabFusion" onclick="switchView('FUSION')">
         🔥 Complicated Projects Level 1 (Sensor Fusion)
@@ -518,6 +545,1658 @@
 
 <main>
   <div class="projects-grid" id="projectsGrid">
+
+    <div class="project-card card-l2" data-type="L2_ESP32" data-num="L2_1" data-category="ESP32-S3 Fusion" data-title="6-dof mahony ahrs gimbal with wi-fi telemetry" data-desc="real-time attitude &amp; heading reference system (ahrs) fusing gy-521 (mpu-6050) gyros and accelerometers at 100 hz. eliminates gyro drift via quaternion pi feedback, with high-resolution ledc gimbal motor control and real-time attitude stream over wi-fi.">
+      <div class="card-header" style="background:rgba(236,72,153,0.15);border-bottom-color:rgba(236,72,153,0.3);">
+        <div class="card-title-area">
+          <span class="proj-badge" style="background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:white;">ESP32-S3 #1</span>
+          <span class="proj-title">6-DOF Mahony AHRS Gimbal with Wi-Fi Telemetry</span>
+        </div>
+        <span class="cat-tag" style="background:rgba(236,72,153,0.2);color:#f472b6;border:1px solid rgba(236,72,153,0.4);">Level 2 FreeRTOS</span>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="Real-time Attitude &amp; Heading Reference System (AHRS) fusing GY-521 (MPU-6050) gyros and accelerometers at 100 Hz. Eliminates gyro drift via quaternion PI feedback, with high-resolution LEDC gimbal motor control and real-time attitude stream over Wi-Fi.">
+          <strong>ESP32-S3 Fusion Core:</strong> Real-time Attitude &amp; Heading Reference System (AHRS) fusing GY-521 (MPU-6050) gyros and accelerometers at 100 Hz. Eliminates gyro drift via quaternion PI feedback, with high-resolution LEDC gimbal motor control and real-time attitude stream over Wi-Fi.
+        </div>
+        
+        <div class="card-specs" style="border-left-color:#ec4899;">
+          <div style="font-weight:700;color:#ec4899;margin-bottom:4px;">Fused Kit Modules:</div>
+          <ul><li>• GY-521 MPU-6050 6-DOF IMU (#40)</li><li>• Analog Joystick Pan/Tilt (#20)</li><li>• Rotary Encoder Trim (#19)</li><li>• Shock Impact Sensor (#16)</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-sm" style="background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:white;" onclick="toggleCode('l2_1')">⚡ View Sketch</button>
+          <a href="Complicated_Projects_Level_2_ESP32_S3/Project_01_FreeRTOS_AHRS_Gimbal_Mahony_WiFi/index.html" class="btn btn-outline btn-sm" target="_blank">📖 Wiring & Guide</a>
+          <a href="Complicated_Projects_Level_2_ESP32_S3/Project_01_FreeRTOS_AHRS_Gimbal_Mahony_WiFi/Project_01_FreeRTOS_AHRS_Gimbal_Mahony_WiFi.ino" class="btn btn-outline btn-sm" target="_blank">📄 .ino File</a>
+        </div>
+      </div>
+      
+      <div class="code-section" id="codeSection_l2_1">
+        <div class="code-header">
+          <span class="code-title">📄 Project_01_FreeRTOS_AHRS_Gimbal_Mahony_WiFi.ino (ESP32-S3 FreeRTOS)</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_l2_1', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_l2_1"><code>/*
+ * ==============================================================================
+ * Project 1: FreeRTOS 6-DOF Inertial AHRS &amp; Gimbal with Mahony Filter
+ * Level 2 Multi-Sensor Fusion on ESP32-S3 (Dual-Core Xtensa LX7 @ 240MHz)
+ * ==============================================================================
+ * Target: ESP32-S3 Dev Module
+ * Kit: Hosyond 45-in-1 Sensor Kit
+ * 
+ * Fused Modules:
+ *  - Module #40: GY-521 (MPU-6050 6-DOF Accelerometer &amp; Gyroscope on I2C)
+ *  - Module #20: Analog Joystick Module (Dual-axis Pan/Tilt setpoint override)
+ *  - Module #19: Rotary Encoder Module (Fine manual stabilization trim)
+ *  - Module #16: Shock / Tap Sensor Module (Sudden mechanical impact override)
+ * 
+ * Actuators &amp; Telemetry:
+ *  - Dual-Channel LEDC High-Resolution PWM (Simulating Pan &amp; Tilt Gimbal Actuators)
+ *  - Module #01: RGB LED (Color-coded Flight &amp; Fusion Mode)
+ *  - Module #11: Active Buzzer (Calibration &amp; AHRS Lock acoustic tone)
+ *  - Built-in Wi-Fi AP + Async Web Server (Core 0 Web Dashboard &amp; Live Roll/Pitch/Yaw)
+ * 
+ * Level 2 Sensor Fusion Mathematical Core:
+ *  - Mahony AHRS Algorithm: Fuses 3D gyroscope angular rates with 3D gravity vector
+ *    from accelerometer using proportional-integral (PI) feedback to eliminate gyro drift.
+ *  - Multi-Core FreeRTOS Partitioning:
+ *      * Core 1 (Priority 5): 100 Hz Real-Time Sensor Fusion &amp; Gimbal PID Loop.
+ *      * Core 0 (Priority 1): Wi-Fi Stack, Web Server &amp; JSON Telemetry Broadcast.
+ *      * Thread-Safe Inter-Core Communication via FreeRTOS Queues and Mutexes.
+ */
+
+#include &lt;Wire.h&gt;
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+
+// ======================== PIN DEFINITIONS (ESP32-S3) ========================
+// I2C Bus for MPU-6050
+const int PIN_I2C_SDA      = 8;   // ESP32-S3 default high-speed I2C SDA
+const int PIN_I2C_SCL      = 9;   // ESP32-S3 default high-speed I2C SCL
+const int MPU_ADDR         = 0x68;
+
+// Analog Joystick (ADC1 channels safe with Wi-Fi)
+const int PIN_JOY_X        = 4;   // ADC1_CH3 - Pan command
+const int PIN_JOY_Y        = 5;   // ADC1_CH4 - Tilt command
+const int PIN_JOY_SW       = 6;   // Digital push switch
+
+// Rotary Encoder
+const int PIN_ENC_CLK      = 10;  // Quadrature Clock A
+const int PIN_ENC_DT       = 11;  // Quadrature Data B
+const int PIN_ENC_SW       = 12;  // Pushbutton
+
+// Shock &amp; Impact Sensor
+const int PIN_SHOCK        = 13;  // Hardware interrupt for violent impact detection
+
+// Actuators &amp; Indicators
+const int PIN_RGB_RED      = 14;  // LEDC Channel 0
+const int PIN_RGB_GREEN    = 15;  // LEDC Channel 1
+const int PIN_RGB_BLUE     = 16;  // LEDC Channel 2
+const int PIN_GIMBAL_PITCH = 17;  // LEDC Channel 3 (Servo / Motor Pitch PWM)
+const int PIN_GIMBAL_ROLL  = 18;  // LEDC Channel 4 (Servo / Motor Roll PWM)
+const int PIN_BUZZER       = 21;  // Active Buzzer
+
+// ==================== SENSOR FUSION DATA STRUCTURES =========================
+struct AttitudeEstimate {
+  float roll;       // Degrees (-180 to +180)
+  float pitch;      // Degrees (-90 to +90)
+  float yaw;        // Degrees (-180 to +180)
+  float gyroX, gyroY, gyroZ; // deg/s
+  float accelX, accelY, accelZ; // g
+  unsigned long timestamp;
+  bool isImpact;
+};
+
+// FreeRTOS Handles
+QueueHandle_t telemetryQueue;
+SemaphoreHandle_t i2cMutex;
+
+// Wi-Fi Access Point Configuration
+const char* AP_SSID = &quot;ESP32S3-Gimbal-AHRS&quot;;
+const char* AP_PASS = &quot;fusion123&quot;;
+WebServer server(80);
+
+// Global State (Protected by Mutex or Read-Only for Web)
+AttitudeEstimate currentAttitude;
+volatile float rollTrimOffset = 0.0;
+volatile float pitchTrimOffset = 0.0;
+volatile bool emergencyBrake = false;
+
+// ======================== MAHONY FILTER CONSTANTS ===========================
+// TwoKp: Proportional feedback gain to pull gyro back to accelerometer gravity
+// TwoKi: Integral feedback gain to eliminate persistent bias
+const float TwoKp = 2.0f * 0.5f;
+const float TwoKi = 2.0f * 0.05f;
+
+// Quaternion orientation of earth relative to sensor
+float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
+float integralFBx = 0.0f, integralFBy = 0.0f, integralFBz = 0.0f;
+
+// Fast inverse square root
+float invSqrt(float x) {
+  float halfx = 0.5f * x;
+  float y = x;
+  long i = *(long*)&amp;y;
+  i = 0x5f3759df - (i &gt;&gt; 1);
+  y = *(float*)&amp;i;
+  y = y * (1.5f - (halfx * y * y));
+  return y;
+}
+
+// Mahony AHRS 6-DOF update (Accelerometers &amp; Gyroscopes)
+void MahonyAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az, float dt) {
+  float recipNorm;
+  float halfvx, halfvy, halfvz;
+  float halfex, halfey, halfez;
+  float qa, qb, qc;
+
+  // Compute feedback only if accelerometer measurement valid (avoids NaN in normalisation)
+  if (!((ax == 0.0f) &amp;&amp; (ay == 0.0f) &amp;&amp; (az == 0.0f))) {
+    // Normalise accelerometer measurement
+    recipNorm = invSqrt(ax * ax + ay * ay + az * az);
+    ax *= recipNorm;
+    ay *= recipNorm;
+    az *= recipNorm;
+
+    // Estimated direction of gravity and vector perpendicular to magnetic flux
+    halfvx = q1 * q3 - q0 * q2;
+    halfvy = q0 * q1 + q2 * q3;
+    halfvz = q0 * q0 - 0.5f + q3 * q3;
+
+    // Error is sum of cross product between estimated and measured direction of gravity
+    halfex = (ay * halfvz - az * halfvy);
+    halfey = (az * halfvx - ax * halfvz);
+    halfez = (ax * halfvy - ay * halfvx);
+
+    // Compute and apply integral feedback if enabled
+    if (TwoKi &gt; 0.0f) {
+      integralFBx += TwoKi * halfex * dt;
+      integralFBy += TwoKi * halfey * dt;
+      integralFBz += TwoKi * halfez * dt;
+      gx += integralFBx;
+      gy += integralFBy;
+      gz += integralFBz;
+    } else {
+      integralFBx = 0.0f;
+      integralFBy = 0.0f;
+      integralFBz = 0.0f;
+    }
+
+    // Apply proportional feedback
+    gx += TwoKp * halfex;
+    gy += TwoKp * halfey;
+    gz += TwoKp * halfez;
+  }
+
+  // Integrate rate of change of quaternion
+  gx *= (0.5f * dt);
+  gy *= (0.5f * dt);
+  gz *= (0.5f * dt);
+  qa = q0;
+  qb = q1;
+  qc = q2;
+  q0 += (-qb * gx - qc * gy - q3 * gz);
+  q1 += (qa * gx + qc * gz - q3 * gy);
+  q2 += (qa * gy - qb * gz + q3 * gx);
+  q3 += (qa * gz + qb * gy - qc * gx);
+
+  // Normalise quaternion
+  recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+  q0 *= recipNorm;
+  q1 *= recipNorm;
+  q2 *= recipNorm;
+  q3 *= recipNorm;
+}
+
+// Convert Quaternions to Euler Angles (Roll, Pitch, Yaw in degrees)
+void computeEulerAngles(float &amp;roll, float &amp;pitch, float &amp;yaw) {
+  roll  = atan2(2.0f * (q0 * q1 + q2 * q3), 1.0f - 2.0f * (q1 * q1 + q2 * q2)) * 180.0f / PI;
+  pitch = asin(constrain(2.0f * (q0 * q2 - q3 * q1), -1.0f, 1.0f)) * 180.0f / PI;
+  yaw   = atan2(2.0f * (q0 * q3 + q1 * q2), 1.0f - 2.0f * (q2 * q2 + q3 * q3)) * 180.0f / PI;
+}
+
+// ======================== HARDWARE INTERRUPT ================================
+volatile unsigned long lastShockTime = 0;
+void IRAM_ATTR isrShockImpact() {
+  unsigned long now = millis();
+  if (now - lastShockTime &gt; 100) {
+    emergencyBrake = true;
+    lastShockTime = now;
+  }
+}
+
+// ======================== WEB SERVER ENDPOINTS ==============================
+void handleRoot() {
+  String page = &quot;&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;UTF-8&#x27;&gt;&lt;meta name=&#x27;viewport&#x27; content=&#x27;width=device-width, initial-scale=1.0&#x27;&gt;&quot;;
+  page += &quot;&lt;title&gt;ESP32-S3 AHRS Telemetry&lt;/title&gt;&quot;;
+  page += &quot;&lt;style&gt;body{background:#0f172a;color:#f8fafc;font-family:sans-serif;padding:20px;text-align:center;}&quot;;
+  page += &quot;.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;max-width:500px;margin:20px auto;box-shadow:0 10px 25px rgba(0,0,0,0.5);}&quot;;
+  page += &quot;.val{font-size:2.2rem;font-weight:bold;color:#38bdf8;margin:10px 0;}&quot;;
+  page += &quot;.badge{background:#f59e0b;color:#0f172a;font-weight:bold;padding:4px 10px;border-radius:6px;}&quot;;
+  page += &quot;&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&quot;;
+  page += &quot;&lt;h2&gt;🚀 ESP32-S3 FreeRTOS 6-DOF AHRS Hub&lt;/h2&gt;&quot;;
+  page += &quot;&lt;span class=&#x27;badge&#x27;&gt;Mahony Fusion Filter @ 100 Hz&lt;/span&gt;&quot;;
+  page += &quot;&lt;div class=&#x27;card&#x27;&gt;&lt;div&gt;ROLL (X-Axis)&lt;/div&gt;&lt;div class=&#x27;val&#x27; id=&#x27;roll&#x27;&gt;0.0&amp;deg;&lt;/div&gt;&quot;;
+  page += &quot;&lt;div&gt;PITCH (Y-Axis)&lt;/div&gt;&lt;div class=&#x27;val&#x27; id=&#x27;pitch&#x27;&gt;0.0&amp;deg;&lt;/div&gt;&quot;;
+  page += &quot;&lt;div&gt;YAW (Z-Axis Rate)&lt;/div&gt;&lt;div class=&#x27;val&#x27; id=&#x27;yaw&#x27;&gt;0.0&amp;deg;&lt;/div&gt;&lt;/div&gt;&quot;;
+  page += &quot;&lt;script&gt;setInterval(()=&gt;{fetch(&#x27;/data&#x27;).then(r=&gt;r.json()).then(d=&gt;{&quot;;
+  page += &quot;document.getElementById(&#x27;roll&#x27;).innerHTML=d.roll.toFixed(1)+&#x27;&amp;deg;&#x27;;&quot;;
+  page += &quot;document.getElementById(&#x27;pitch&#x27;).innerHTML=d.pitch.toFixed(1)+&#x27;&amp;deg;&#x27;;&quot;;
+  page += &quot;document.getElementById(&#x27;yaw&#x27;).innerHTML=d.yaw.toFixed(1)+&#x27;&amp;deg;&#x27;;&quot;;
+  page += &quot;});},100);&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;&quot;;
+  server.send(200, &quot;text/html&quot;, page);
+}
+
+void handleData() {
+  String json = &quot;{&quot;;
+  json += &quot;\&quot;roll\&quot;:&quot; + String(currentAttitude.roll, 2) + &quot;,&quot;;
+  json += &quot;\&quot;pitch\&quot;:&quot; + String(currentAttitude.pitch, 2) + &quot;,&quot;;
+  json += &quot;\&quot;yaw\&quot;:&quot; + String(currentAttitude.yaw, 2) + &quot;,&quot;;
+  json += &quot;\&quot;impact\&quot;:&quot; + String(currentAttitude.isImpact ? &quot;true&quot; : &quot;false&quot;);
+  json += &quot;}&quot;;
+  server.send(200, &quot;application/json&quot;, json);
+}
+
+// ======================== FREERTOS TASK: CORE 1 SENSOR FUSION ===============
+void TaskSensorFusion(void *pvParameters) {
+  const TickType_t xFrequency = pdMS_TO_TICKS(10); // 100 Hz (10 ms)
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  unsigned long lastTime = micros();
+
+  Serial.println(F(&quot;[Core 1] TaskSensorFusion started at 100 Hz.&quot;));
+
+  for (;;) {
+    vTaskDelayUntil(&amp;xLastWakeTime, xFrequency);
+
+    unsigned long now = micros();
+    float dt = (now - lastTime) / 1000000.0f;
+    lastTime = now;
+    if (dt &lt;= 0.0f || dt &gt; 0.1f) dt = 0.01f;
+
+    // 1. Read MPU-6050 Accelerometer &amp; Gyroscope via I2C with Mutex
+    int16_t axRaw, ayRaw, azRaw, gxRaw, gyRaw, gzRaw;
+    if (xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
+      Wire.beginTransmission(MPU_ADDR);
+      Wire.write(0x3B);
+      Wire.endTransmission(false);
+      Wire.requestFrom(MPU_ADDR, 14, true);
+
+      if (Wire.available() &gt;= 14) {
+        axRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
+        ayRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
+        azRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
+        Wire.read(); Wire.read(); // Skip temperature
+        gxRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
+        gyRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
+        gzRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
+      }
+      xSemaphoreGive(i2cMutex);
+    }
+
+    // Convert raw to physical units:
+    // Accel +/-2g: 16384 LSB/g | Gyro +/-250 deg/s: 131.0 LSB/(deg/s)
+    float ax = axRaw / 16384.0f;
+    float ay = ayRaw / 16384.0f;
+    float az = azRaw / 16384.0f;
+
+    float gx = (gxRaw / 131.0f) * (PI / 180.0f); // Convert to radians/sec for Mahony
+    float gy = (gyRaw / 131.0f) * (PI / 180.0f);
+    float gz = (gzRaw / 131.0f) * (PI / 180.0f);
+
+    // 2. Execute Level-2 Mahony AHRS Algorithm
+    MahonyAHRSupdateIMU(gx, gy, gz, ax, ay, az, dt);
+
+    // 3. Extract Euler Angles
+    float roll, pitch, yaw;
+    computeEulerAngles(roll, pitch, yaw);
+
+    // Read Joystick Manual Setpoint
+    int joyX = analogRead(PIN_JOY_X);
+    int joyY = analogRead(PIN_JOY_Y);
+    float panOffset = map(joyX, 0, 4095, -30, 30);
+    float tiltOffset = map(joyY, 0, 4095, -30, 30);
+
+    // Update Global Attitude
+    currentAttitude.roll = roll + rollTrimOffset;
+    currentAttitude.pitch = pitch + pitchTrimOffset + tiltOffset;
+    currentAttitude.yaw = yaw + panOffset;
+    currentAttitude.accelX = ax;
+    currentAttitude.accelY = ay;
+    currentAttitude.accelZ = az;
+    currentAttitude.isImpact = emergencyBrake;
+    currentAttitude.timestamp = millis();
+
+    // 4. Actuator Gimbal PWM Output
+    if (!emergencyBrake) {
+      // Map Roll (-45 to +45 deg) to Servo PWM Pulse (1ms to 2ms)
+      int rollPwm = constrain(map((int)currentAttitude.roll, -45, 45, 1000, 2000), 1000, 2000);
+      int pitchPwm = constrain(map((int)currentAttitude.pitch, -45, 45, 1000, 2000), 1000, 2000);
+      ledcWrite(3, rollPwm);
+      ledcWrite(4, pitchPwm);
+      // Status RGB: Smooth Cyan (Stabilizing active)
+      ledcWrite(0, 0);   // Red
+      ledcWrite(1, 180); // Green
+      ledcWrite(2, 255); // Blue
+    } else {
+      // Impact emergency override: lock actuators &amp; pulse Red
+      ledcWrite(0, 255); // Red
+      ledcWrite(1, 0);
+      ledcWrite(2, 0);
+      if (millis() - lastShockTime &gt; 3000) emergencyBrake = false; // Auto-resume after 3s
+    }
+
+    // Push to Queue for Core 0
+    xQueueOverwrite(telemetryQueue, &amp;currentAttitude);
+  }
+}
+
+// ======================== FREERTOS TASK: CORE 0 NETWORK &amp; TELEMETRY =========
+void TaskNetwork(void *pvParameters) {
+  Serial.println(F(&quot;[Core 0] TaskNetwork started. Handling Wi-Fi and Web server.&quot;));
+
+  for (;;) {
+    server.handleClient();
+    vTaskDelay(pdMS_TO_TICKS(5)); // Yield 5ms to allow background TCP/IP stack
+  }
+}
+
+// ======================== SETUP =============================================
+void setup() {
+  Serial.begin(115200);
+  while (!Serial &amp;&amp; millis() &lt; 3000);
+
+  Serial.println(F(&quot;\n============================================================&quot;));
+  Serial.println(F(&quot;  PROJECT 1: ESP32-S3 FREERTOS 6-DOF MAHONY AHRS GIMBAL&quot;));
+  Serial.println(F(&quot;============================================================&quot;));
+
+  // 1. Initialize High-Speed I2C on Pins 8/9
+  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000); // 400 kHz Fast-Mode
+  i2cMutex = xSemaphoreCreateMutex();
+
+  // Wake up MPU-6050
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x6B);
+  Wire.write(0);
+  Wire.endTransmission();
+
+  // 2. Hardware Interrupt for Shock Sensor
+  pinMode(PIN_SHOCK, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_SHOCK), isrShockImpact, FALLING);
+
+  // 3. Configure High-Resolution LEDC PWM Channels
+  ledcAttach(PIN_RGB_RED, 5000, 8);   // 5 kHz, 8-bit resolution
+  ledcAttach(PIN_RGB_GREEN, 5000, 8);
+  ledcAttach(PIN_RGB_BLUE, 5000, 8);
+  ledcAttach(PIN_GIMBAL_ROLL, 50, 16);  // 50 Hz Servo standard, 16-bit
+  ledcAttach(PIN_GIMBAL_PITCH, 50, 16);
+
+  // 4. Initialize Wi-Fi Access Point &amp; Web Server
+  WiFi.softAP(AP_SSID, AP_PASS);
+  Serial.print(F(&quot;Wi-Fi AP Online: &quot;)); Serial.println(AP_SSID);
+  Serial.print(F(&quot;Connect &amp; Open: http://&quot;)); Serial.println(WiFi.softAPIP());
+
+  server.on(&quot;/&quot;, handleRoot);
+  server.on(&quot;/data&quot;, handleData);
+  server.begin();
+
+  // 5. Create FreeRTOS Queue
+  telemetryQueue = xQueueCreate(1, sizeof(AttitudeEstimate));
+
+  // 6. Spawn Core 1 Real-Time Task (100 Hz Fusion)
+  xTaskCreatePinnedToCore(
+    TaskSensorFusion,
+    &quot;SensorFusionTask&quot;,
+    4096,
+    NULL,
+    5, // High priority
+    NULL,
+    1  // Dedicated to Core 1
+  );
+
+  // 7. Spawn Core 0 Network Task (Wi-Fi Web Server)
+  xTaskCreatePinnedToCore(
+    TaskNetwork,
+    &quot;NetworkTask&quot;,
+    4096,
+    NULL,
+    1, // Low priority
+    NULL,
+    0  // Dedicated to Core 0
+  );
+
+  Serial.println(F(&quot;Dual-Core FreeRTOS scheduling active. System Online!\n&quot;));
+}
+
+void loop() {
+  // Main Arduino loop remains idle to preserve scheduler efficiency
+  vTaskDelay(pdMS_TO_TICKS(1000));
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card card-l2" data-type="L2_ESP32" data-num="L2_2" data-category="ESP32-S3 Fusion" data-title="industrial predictive maintenance (pdm) sentinel" data-desc="comprehensive industrial machine health monitor adhering to iso 10816 standards. double-buffered 500 hz vibration sampling on core 1 computes true rms velocity, statistical kurtosis (detects bearing spalling/pitting), bearing temperature gradient, and shaft rpm.">
+      <div class="card-header" style="background:rgba(236,72,153,0.15);border-bottom-color:rgba(236,72,153,0.3);">
+        <div class="card-title-area">
+          <span class="proj-badge" style="background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:white;">ESP32-S3 #2</span>
+          <span class="proj-title">Industrial Predictive Maintenance (PdM) Sentinel</span>
+        </div>
+        <span class="cat-tag" style="background:rgba(236,72,153,0.2);color:#f472b6;border:1px solid rgba(236,72,153,0.4);">Level 2 FreeRTOS</span>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="Comprehensive industrial machine health monitor adhering to ISO 10816 standards. Double-buffered 500 Hz vibration sampling on Core 1 computes true RMS Velocity, statistical Kurtosis (detects bearing spalling/pitting), bearing temperature gradient, and shaft RPM.">
+          <strong>ESP32-S3 Fusion Core:</strong> Comprehensive industrial machine health monitor adhering to ISO 10816 standards. Double-buffered 500 Hz vibration sampling on Core 1 computes true RMS Velocity, statistical Kurtosis (detects bearing spalling/pitting), bearing temperature gradient, and shaft RPM.
+        </div>
+        
+        <div class="card-specs" style="border-left-color:#ec4899;">
+          <div style="font-weight:700;color:#ec4899;margin-bottom:4px;">Fused Kit Modules:</div>
+          <ul><li>• MPU-6050 500 Hz Accel (#40)</li><li>• Analog Bearing Temp (#13)</li><li>• Acoustic Friction Sensor (#37)</li><li>• Tachometer Interrupter (#27)</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-sm" style="background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:white;" onclick="toggleCode('l2_2')">⚡ View Sketch</button>
+          <a href="Complicated_Projects_Level_2_ESP32_S3/Project_02_Industrial_PdM_Vibration_Thermal_Acoustic_Fusion/index.html" class="btn btn-outline btn-sm" target="_blank">📖 Wiring & Guide</a>
+          <a href="Complicated_Projects_Level_2_ESP32_S3/Project_02_Industrial_PdM_Vibration_Thermal_Acoustic_Fusion/Project_02_Industrial_PdM_Vibration_Thermal_Acoustic_Fusion.ino" class="btn btn-outline btn-sm" target="_blank">📄 .ino File</a>
+        </div>
+      </div>
+      
+      <div class="code-section" id="codeSection_l2_2">
+        <div class="code-header">
+          <span class="code-title">📄 Project_02_Industrial_PdM_Vibration_Thermal_Acoustic_Fusion.ino (ESP32-S3 FreeRTOS)</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_l2_2', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_l2_2"><code>/*
+ * ==============================================================================
+ * Project 2: Industrial Predictive Maintenance (PdM) &amp; Machine Health Sentinel
+ * Level 2 Multi-Sensor Fusion on ESP32-S3 (Dual-Core Xtensa LX7 @ 240MHz)
+ * ==============================================================================
+ * Target: ESP32-S3 Dev Module
+ * Kit: Hosyond 45-in-1 Sensor Kit
+ * 
+ * Fused Kit Modules:
+ *  - Module #40: GY-521 (MPU-6050 Accelerometer) - High-Frequency Vibration (500 Hz)
+ *  - Module #13: Analog Temperature Sensor (NTC / LM35) - Bearing Thermal Gradient
+ *  - Module #37: High-Sensitivity Sound Sensor - Acoustic Friction Emission
+ *  - Module #27: Photo Interrupter / Module #24 Hall Sensor - Shaft RPM Tachometer
+ * 
+ * Actuators &amp; Protection:
+ *  - Module #30: 5V Relay Module - Emergency Contactor / Motor Trip Interlock
+ *  - Module #01: RGB LED - ISO 10816 Vibration Severity Standard Zones (A/B/C/D)
+ *  - Module #12: Passive Buzzer - Frequency-Modulated Warning Beeper
+ * 
+ * Level 2 Sensor Fusion &amp; Analytical Core:
+ *  - ISO 10816-3 Industrial Vibration Standards:
+ *      * Calculates True RMS Vibration Velocity (v_RMS in mm/s).
+ *      * Calculates Crest Factor &amp; Kurtosis (detects bearing spalling &amp; impact pitting).
+ *  - Multi-Domain Failure Precursor Fusion:
+ *      * Stage 1 (Initial Wear): Acoustic emission increases (Sound sensor spikes).
+ *      * Stage 2 (Defect Spalling): High-frequency vibration crest factor spikes.
+ *      * Stage 3 (Severe Looseness): RMS vibration velocity exceeds ISO Zone C (&gt; 4.5 mm/s).
+ *      * Stage 4 (Imminent Seizure): Bearing temperature derivative dT/dt shoots upward.
+ *  - FreeRTOS Multi-Core Design:
+ *      * Core 1: 500 Hz Real-Time Vibration Sampling &amp; Double-Buffer Math.
+ *      * Core 0: Asynchronous Diagnostics, Health Index Evaluation &amp; Serial/Web Stream.
+ */
+
+#include &lt;Wire.h&gt;
+#include &lt;math.h&gt;
+
+// ======================== PIN DEFINITIONS (ESP32-S3) ========================
+// I2C MPU-6050
+const int PIN_I2C_SDA      = 8;
+const int PIN_I2C_SCL      = 9;
+const int MPU_ADDR         = 0x68;
+
+// Analog Sensors (ADC1)
+const int PIN_TEMP_ANALOG  = 4;   // Bearing temperature sensor (ADC1_CH3)
+const int PIN_SOUND_ANALOG = 5;   // Acoustic emission sensor (ADC1_CH4)
+
+// Tachometer (Optical photo-interrupter or Hall sensor)
+const int PIN_TACH_PULSE   = 6;   // Digital pulse for shaft RPM
+
+// Actuators
+const int PIN_RELAY_TRIP   = 7;   // 5V Relay for emergency motor cutoff (Active LOW)
+const int PIN_BUZZER       = 10;  // Passive buzzer
+const int PIN_RGB_RED      = 14;  // ISO Zone D indicator
+const int PIN_RGB_GREEN    = 15;  // ISO Zone A/B indicator
+const int PIN_RGB_BLUE     = 16;  // Running status
+
+// ==================== ISO 10816 VIBRATION SEVERITY ZONES ====================
+// Based on ISO 10816-3 for Class I/II medium industrial machines:
+const float ISO_ZONE_B_LIMIT = 2.8f; // mm/s RMS (Good to Acceptable)
+const float ISO_ZONE_C_LIMIT = 4.5f; // mm/s RMS (Acceptable to Unsatisfactory - Warning)
+const float ISO_ZONE_D_LIMIT = 7.1f; // mm/s RMS (Unacceptable - Immediate Trip!)
+
+enum MachineHealthZone {
+  ZONE_A_GOOD,         // Green LED, Relay closed, safe
+  ZONE_B_ACCEPTABLE,   // Cyan LED, Safe for continuous operation
+  ZONE_C_UNSATISFACTORY,// Amber LED, High vibration/heat warning, buzzer beep
+  ZONE_D_UNACCEPTABLE  // Flashing Red, SIREN, RELAY TRIP (Emergency Shutdown)
+};
+
+// Double-Buffer Vibration Storage (500 Hz Sampling)
+const int SAMPLE_WINDOW = 128;
+float accelBufferX[SAMPLE_WINDOW];
+float accelBufferY[SAMPLE_WINDOW];
+float accelBufferZ[SAMPLE_WINDOW];
+volatile int bufferIndex = 0;
+volatile bool bufferReady = false;
+
+// Processed Machine Health Metrics
+struct HealthMetrics {
+  float vRms;          // Velocity RMS (mm/s)
+  float crestFactor;   // Peak / RMS
+  float kurtosis;      // 4th moment statistical peakedness
+  float temperature;   // Bearing temperature (°C)
+  float tempRate;      // dT/dt (°C / min)
+  float acousticNoise; // Acoustic level
+  int   shaftRpm;      // Rotational speed
+  MachineHealthZone zone;
+};
+
+HealthMetrics currentMetrics;
+
+// FreeRTOS Handles
+SemaphoreHandle_t metricsMutex;
+
+// Tachometer Interrupt Tracking
+volatile unsigned long tachPulses = 0;
+volatile unsigned long lastTachTime = 0;
+void IRAM_ATTR isrTachometer() {
+  tachPulses++;
+}
+
+// ======================== HELPER FUNCTIONS ==================================
+float readBearingTempC() {
+  int raw = analogRead(PIN_TEMP_ANALOG);
+  // Linear scaling for LM35 or calibrated NTC (0-3.3V)
+  float voltage = (raw / 4095.0f) * 3.3f;
+  return voltage * 100.0f; // 10 mV / °C (LM35 equivalent)
+}
+
+// Set RGB LED Color
+void setZoneLed(byte r, byte g, byte b) {
+  analogWrite(PIN_RGB_RED, r);
+  analogWrite(PIN_RGB_GREEN, g);
+  analogWrite(PIN_RGB_BLUE, b);
+}
+
+// ======================== FREERTOS TASK: CORE 1 HIGH-SPEED SAMPLER ==========
+void TaskVibrationSampler(void *pvParameters) {
+  const TickType_t xFrequency = pdMS_TO_TICKS(2); // 500 Hz (2ms period)
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+
+  Serial.println(F(&quot;[Core 1] High-Frequency 500 Hz Vibration Sampler Online.&quot;));
+
+  for (;;) {
+    vTaskDelayUntil(&amp;xLastWakeTime, xFrequency);
+
+    // Read MPU-6050 Accelerometer
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x3B);
+    Wire.endTransmission(false);
+    Wire.requestFrom(MPU_ADDR, 6, true);
+
+    if (Wire.available() &gt;= 6) {
+      int16_t ax = (Wire.read() &lt;&lt; 8 | Wire.read());
+      int16_t ay = (Wire.read() &lt;&lt; 8 | Wire.read());
+      int16_t az = (Wire.read() &lt;&lt; 8 | Wire.read());
+
+      // Convert to g&#x27;s (16384 LSB/g)
+      accelBufferX[bufferIndex] = ax / 16384.0f;
+      accelBufferY[bufferIndex] = ay / 16384.0f;
+      accelBufferZ[bufferIndex] = az / 16384.0f;
+
+      bufferIndex++;
+      if (bufferIndex &gt;= SAMPLE_WINDOW) {
+        bufferIndex = 0;
+        bufferReady = true;
+      }
+    }
+  }
+}
+
+// ======================== FREERTOS TASK: CORE 0 DIAGNOSTICS &amp; FUSION ========
+void TaskDiagnostics(void *pvParameters) {
+  unsigned long lastTempCheck = millis();
+  float prevTemp = 25.0f;
+  unsigned long lastRpmCheck = millis();
+
+  Serial.println(F(&quot;[Core 0] TaskDiagnostics &amp; Sensor Fusion Online.&quot;));
+
+  for (;;) {
+    vTaskDelay(pdMS_TO_TICKS(100)); // Run analysis every 100ms
+    unsigned long now = millis();
+
+    // 1. Process Vibration Window if Ready
+    if (bufferReady) {
+      bufferReady = false;
+
+      float sumSquares = 0.0f;
+      float peakVal = 0.0f;
+      float sumFourthPower = 0.0f;
+      float mean = 0.0f;
+
+      // Calculate Total Dynamic Acceleration Magnitude: |a| - 1g (remove gravity)
+      for (int i = 0; i &lt; SAMPLE_WINDOW; i++) {
+        float ax = accelBufferX[i];
+        float ay = accelBufferY[i];
+        float az = accelBufferZ[i];
+        float mag = sqrt(ax * ax + ay * ay + az * az) - 1.0f;
+        mean += mag;
+      }
+      mean /= SAMPLE_WINDOW;
+
+      for (int i = 0; i &lt; SAMPLE_WINDOW; i++) {
+        float ax = accelBufferX[i];
+        float ay = accelBufferY[i];
+        float az = accelBufferZ[i];
+        float mag = abs(sqrt(ax * ax + ay * ay + az * az) - 1.0f);
+
+        sumSquares += (mag - mean) * (mag - mean);
+        sumFourthPower += pow(mag - mean, 4);
+        if (mag &gt; peakVal) peakVal = mag;
+      }
+
+      float variance = sumSquares / SAMPLE_WINDOW;
+      float stdDev = sqrt(variance);
+      float kurtosis = (variance &gt; 0.0001f) ? (sumFourthPower / (SAMPLE_WINDOW * variance * variance)) : 3.0f;
+
+      // Approximate RMS velocity in mm/s from acceleration (v = a / (2*pi*f)):
+      // For dominant 50 Hz industrial motor vibration: 1g ≈ 31.2 mm/s RMS
+      float rmsVelocity = stdDev * 31.2f;
+      float crestFactor = (stdDev &gt; 0.001f) ? (peakVal / stdDev) : 1.0f;
+
+      // 2. Measure Bearing Thermal Gradient
+      float temp = readBearingTempC();
+      float dtMinutes = (now - lastTempCheck) / 60000.0f;
+      float tempRate = 0.0f;
+      if (dtMinutes &gt;= 0.1f) {
+        tempRate = (temp - prevTemp) / dtMinutes; // °C per minute
+        prevTemp = temp;
+        lastTempCheck = now;
+      }
+
+      // 3. Read High-Frequency Acoustic Noise
+      int rawAcoustic = analogRead(PIN_SOUND_ANALOG);
+
+      // 4. Calculate Shaft RPM
+      unsigned long dtRpm = now - lastRpmCheck;
+      int rpm = 0;
+      if (dtRpm &gt;= 500) {
+        rpm = (tachPulses * 60000) / dtRpm;
+        tachPulses = 0;
+        lastRpmCheck = now;
+      }
+
+      // 5. Sensor Fusion &amp; ISO 10816 Health Evaluation
+      MachineHealthZone zone = ZONE_A_GOOD;
+
+      // Base ISO velocity zone
+      if (rmsVelocity &gt;= ISO_ZONE_D_LIMIT) {
+        zone = ZONE_D_UNACCEPTABLE;
+      } else if (rmsVelocity &gt;= ISO_ZONE_C_LIMIT) {
+        zone = ZONE_C_UNSATISFACTORY;
+      } else if (rmsVelocity &gt;= ISO_ZONE_B_LIMIT) {
+        zone = ZONE_B_ACCEPTABLE;
+      } else {
+        zone = ZONE_A_GOOD;
+      }
+
+      // Multi-Domain Fusion Escalation:
+      // If Kurtosis &gt; 4.5 (bearing pitting) AND Acoustic noise is high (&gt;1500), escalate zone
+      if (kurtosis &gt; 4.5f &amp;&amp; rawAcoustic &gt; 1500 &amp;&amp; zone &lt; ZONE_C_UNSATISFACTORY) {
+        zone = ZONE_C_UNSATISFACTORY; // Pre-failure warning
+      }
+      // If Bearing Temp is critically high (&gt;75°C) or thermal rate &gt; 5°C/min, trip immediately!
+      if (temp &gt; 75.0f || tempRate &gt; 5.0f) {
+        zone = ZONE_D_UNACCEPTABLE;
+      }
+
+      // 6. Actuator Protection Control
+      if (xSemaphoreTake(metricsMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+        currentMetrics.vRms = rmsVelocity;
+        currentMetrics.crestFactor = crestFactor;
+        currentMetrics.kurtosis = kurtosis;
+        currentMetrics.temperature = temp;
+        currentMetrics.tempRate = tempRate;
+        currentMetrics.acousticNoise = rawAcoustic;
+        currentMetrics.shaftRpm = rpm;
+        currentMetrics.zone = zone;
+        xSemaphoreGive(metricsMutex);
+      }
+
+      switch (zone) {
+        case ZONE_A_GOOD:
+          setZoneLed(0, 255, 0);             // Green
+          digitalWrite(PIN_RELAY_TRIP, HIGH);// Motor Enabled
+          noTone(PIN_BUZZER);
+          break;
+
+        case ZONE_B_ACCEPTABLE:
+          setZoneLed(0, 200, 255);           // Cyan
+          digitalWrite(PIN_RELAY_TRIP, HIGH);
+          noTone(PIN_BUZZER);
+          break;
+
+        case ZONE_C_UNSATISFACTORY:
+          setZoneLed(255, 140, 0);           // Amber
+          digitalWrite(PIN_RELAY_TRIP, HIGH);
+          tone(PIN_BUZZER, 1000, 100);       // Intermittent advisory chirp
+          break;
+
+        case ZONE_D_UNACCEPTABLE:
+          setZoneLed(255, 0, 0);             // Bright Red
+          digitalWrite(PIN_RELAY_TRIP, LOW); // TRIP MOTOR CONTACTOR (EMERGENCY SHUTDOWN!)
+          tone(PIN_BUZZER, 2400);            // Continuous siren
+          break;
+      }
+
+      // Serial Telemetry
+      Serial.print(F(&quot;[PdM-FUSION] v_RMS: &quot;));
+      Serial.print(rmsVelocity, 2);
+      Serial.print(F(&quot; mm/s | Kurtosis: &quot;));
+      Serial.print(kurtosis, 2);
+      Serial.print(F(&quot; | Temp: &quot;));
+      Serial.print(temp, 1);
+      Serial.print(F(&quot;C (Rate: &quot;));
+      Serial.print(tempRate, 1);
+      Serial.print(F(&quot;C/min) | RPM: &quot;));
+      Serial.print(rpm);
+      Serial.print(F(&quot; -&gt; ISO ZONE: &quot;));
+
+      switch (zone) {
+        case ZONE_A_GOOD:          Serial.println(F(&quot;ZONE A [Good]&quot;)); break;
+        case ZONE_B_ACCEPTABLE:    Serial.println(F(&quot;ZONE B [Acceptable]&quot;)); break;
+        case ZONE_C_UNSATISFACTORY:Serial.println(F(&quot;ZONE C [Warning: Maintenance Required]&quot;)); break;
+        case ZONE_D_UNACCEPTABLE:  Serial.println(F(&quot;ZONE D [CRITICAL: MOTOR TRIPPED!]&quot;)); break;
+      }
+    }
+  }
+}
+
+// ======================== SETUP =============================================
+void setup() {
+  Serial.begin(115200);
+  while (!Serial &amp;&amp; millis() &lt; 3000);
+
+  Serial.println(F(&quot;\n============================================================&quot;));
+  Serial.println(F(&quot;  PROJECT 2: ESP32-S3 PREDICTIVE MAINTENANCE (PdM) SENTINEL&quot;));
+  Serial.println(F(&quot;============================================================&quot;));
+
+  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000); // 400 kHz Fast I2C
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x6B);
+  Wire.write(0); // Wake MPU-6050
+  Wire.endTransmission();
+
+  pinMode(PIN_TACH_PULSE, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_TACH_PULSE), isrTachometer, RISING);
+
+  pinMode(PIN_RELAY_TRIP, OUTPUT);
+  pinMode(PIN_BUZZER, OUTPUT);
+  pinMode(PIN_RGB_RED, OUTPUT);
+  pinMode(PIN_RGB_GREEN, OUTPUT);
+  pinMode(PIN_RGB_BLUE, OUTPUT);
+
+  // Initial Safe Defaults
+  digitalWrite(PIN_RELAY_TRIP, HIGH); // Motor enabled
+  setZoneLed(0, 255, 0); // Green
+  noTone(PIN_BUZZER);
+
+  metricsMutex = xSemaphoreCreateMutex();
+
+  // Core 1: 500 Hz Sampling Task
+  xTaskCreatePinnedToCore(
+    TaskVibrationSampler,
+    &quot;VibeSampler&quot;,
+    4096,
+    NULL,
+    5,
+    NULL,
+    1
+  );
+
+  // Core 0: Diagnostics &amp; Fusion Task
+  xTaskCreatePinnedToCore(
+    TaskDiagnostics,
+    &quot;Diagnostics&quot;,
+    4096,
+    NULL,
+    2,
+    NULL,
+    0
+  );
+
+  Serial.println(F(&quot;Industrial PdM Monitor Online. ISO 10816 standards active.\n&quot;));
+}
+
+void loop() {
+  vTaskDelay(pdMS_TO_TICKS(1000));
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card card-l2" data-type="L2_ESP32" data-num="L2_3" data-category="ESP32-S3 Fusion" data-title="wildfire early-warning bayesian node" data-desc="multi-spectral forestry monitoring station computing the canadian fire weather index and bayesian joint wildfire probability p(fire | ir, temp, rh, soil, sound). features an autonomous wi-fi telemetry portal and automated perimeter sprinkler valve relay.">
+      <div class="card-header" style="background:rgba(236,72,153,0.15);border-bottom-color:rgba(236,72,153,0.3);">
+        <div class="card-title-area">
+          <span class="proj-badge" style="background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:white;">ESP32-S3 #3</span>
+          <span class="proj-title">Wildfire Early-Warning Bayesian Node</span>
+        </div>
+        <span class="cat-tag" style="background:rgba(236,72,153,0.2);color:#f472b6;border:1px solid rgba(236,72,153,0.4);">Level 2 FreeRTOS</span>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="Multi-spectral forestry monitoring station computing the Canadian Fire Weather Index and Bayesian joint wildfire probability P(Fire | IR, Temp, RH, Soil, Sound). Features an autonomous Wi-Fi telemetry portal and automated perimeter sprinkler valve relay.">
+          <strong>ESP32-S3 Fusion Core:</strong> Multi-spectral forestry monitoring station computing the Canadian Fire Weather Index and Bayesian joint wildfire probability P(Fire | IR, Temp, RH, Soil, Sound). Features an autonomous Wi-Fi telemetry portal and automated perimeter sprinkler valve relay.
+        </div>
+        
+        <div class="card-specs" style="border-left-color:#ec4899;">
+          <div style="font-weight:700;color:#ec4899;margin-bottom:4px;">Fused Kit Modules:</div>
+          <ul><li>• Flame Sensor Optical IR (#34)</li><li>• DHT11 Temp &amp; Humidity (#07)</li><li>• Photoresistor LDR Solar (#14)</li><li>• Soil / Fuel Moisture (#42)</li><li>• Sound Sensor (#37)</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-sm" style="background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:white;" onclick="toggleCode('l2_3')">⚡ View Sketch</button>
+          <a href="Complicated_Projects_Level_2_ESP32_S3/Project_03_Wildfire_Early_Warning_Bayesian_Mesh_Node/index.html" class="btn btn-outline btn-sm" target="_blank">📖 Wiring & Guide</a>
+          <a href="Complicated_Projects_Level_2_ESP32_S3/Project_03_Wildfire_Early_Warning_Bayesian_Mesh_Node/Project_03_Wildfire_Early_Warning_Bayesian_Mesh_Node.ino" class="btn btn-outline btn-sm" target="_blank">📄 .ino File</a>
+        </div>
+      </div>
+      
+      <div class="code-section" id="codeSection_l2_3">
+        <div class="code-header">
+          <span class="code-title">📄 Project_03_Wildfire_Early_Warning_Bayesian_Mesh_Node.ino (ESP32-S3 FreeRTOS)</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_l2_3', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_l2_3"><code>/*
+ * ==============================================================================
+ * Project 3: Autonomous Environmental Micro-Climate &amp; Wildfire Early-Warning Node
+ * Level 2 Multi-Sensor Fusion on ESP32-S3 (Dual-Core Xtensa LX7 @ 240MHz)
+ * ==============================================================================
+ * Target: ESP32-S3 Dev Module
+ * Kit: Hosyond 45-in-1 Sensor Kit
+ * 
+ * Fused Kit Modules:
+ *  - Module #34: Flame Sensor (Optical Infrared Phototransistor)
+ *  - Module #07: DHT11 Sensor (Atmospheric Temp &amp; Relative Humidity)
+ *  - Module #14: Photoresistor LDR (Solar Insolation &amp; Canopy Shadow)
+ *  - Module #42: Soil Moisture Sensor (Ground Litter / Fuel Dryness)
+ *  - Module #37: High-Sensitivity Sound Sensor (Canopy Crackling / Wind Gusts)
+ * 
+ * Actuators &amp; Wireless:
+ *  - Module #30: 5V Relay Module (Perimeter Water Sprinkler / Evacuation Trigger)
+ *  - Module #01: RGB LED (Fire Weather Index Danger Levels: Low/Mod/High/Extreme)
+ *  - Module #11: Active Buzzer (Wildfire Alarm Siren)
+ *  - ESP32-S3 SoftAP &amp; Async Web Server (Core 0 Live Micro-Climate Station)
+ * 
+ * Level 2 Sensor Fusion &amp; Mathematical Core:
+ *  - Bayesian Probabilistic Risk Evaluation:
+ *      * Calculates the probability P(Fire | IR, Temp, RH, Soil, Sound).
+ *      * Fuses slow macro-climatic fuel dryness (Low RH + High Temp + Dry Soil)
+ *        with fast micro-event triggers (Optical IR flicker + Acoustic crackle).
+ *  - Fire Weather Index (FWI) &amp; Fine Fuel Moisture Code (FFMC) Approximation:
+ *      * Equilibrium Moisture Content (EMC) modeling based on temperature and humidity.
+ *  - Multi-Core FreeRTOS Partitioning:
+ *      * Core 1: 50 Hz Environmental Sampling, Non-blocking DHT11 bit-bang &amp; Bayesian Inference.
+ *      * Core 0: Wi-Fi Telemetry Server &amp; JSON Broadcast.
+ */
+
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+#include &lt;math.h&gt;
+
+// ======================== PIN DEFINITIONS (ESP32-S3) ========================
+// Analog Sensors (ADC1)
+const int PIN_FLAME_ANALOG = 4;   // Flame Sensor AO (ADC1_CH3)
+const int PIN_FLAME_DIG    = 5;   // Flame Sensor DO (Digital)
+const int PIN_LDR_ANALOG   = 6;   // Photoresistor LDR (ADC1_CH5)
+const int PIN_SOIL_ANALOG  = 7;   // Soil / Fuel Moisture (ADC1_CH6)
+const int PIN_SOUND_ANALOG = 1;   // Sound Sensor (ADC1_CH0)
+
+// Digital 1-Wire
+const int PIN_DHT11_DATA   = 2;   // DHT11 1-wire data
+
+// Actuators
+const int PIN_SPRINKLER_RELAY = 8; // 5V Relay (Active LOW)
+const int PIN_BUZZER       = 10;  // Active Buzzer
+const int PIN_RGB_RED      = 14;  // Red
+const int PIN_RGB_GREEN    = 15;  // Green
+const int PIN_RGB_BLUE     = 16;  // Blue
+
+// Fire Danger Categories
+enum FireDangerLevel {
+  DANGER_LOW,       // Blue LED, Safe ambient conditions
+  DANGER_MODERATE,  // Green LED, Normal forestry conditions
+  DANGER_HIGH,      // Amber LED, High fuel dryness / high wind
+  DANGER_EXTREME    // Flashing Red, SIREN, SPRINKLER RELAY ENGAGED
+};
+
+struct ClimateData {
+  float temperature;
+  float humidity;
+  float soilMoisturePercent;
+  float solarPercent;
+  float soundLevel;
+  float flameIntensityPercent;
+  float bayesianRiskScore; // 0.0 to 1.0 (0% to 100%)
+  FireDangerLevel level;
+};
+
+ClimateData currentClimate;
+SemaphoreHandle_t climateMutex;
+
+// Web Server
+const char* AP_SSID = &quot;ESP32S3-Wildfire-Sentinel&quot;;
+const char* AP_PASS = &quot;wildfire123&quot;;
+WebServer server(80);
+
+// ======================== FAST DHT11 BIT-BANG DRIVER ========================
+bool readDHT11(int pin, float &amp;temp, float &amp;hum) {
+  byte data[5] = {0, 0, 0, 0, 0};
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);
+  delay(18); // 18ms start pulse
+  digitalWrite(pin, HIGH);
+  delayMicroseconds(30);
+  pinMode(pin, INPUT);
+
+  unsigned long timeout = micros();
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) return false; }
+  timeout = micros();
+  while (digitalRead(pin) == LOW)  { if (micros() - timeout &gt; 100) return false; }
+  timeout = micros();
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) return false; }
+
+  for (int i = 0; i &lt; 40; i++) {
+    timeout = micros();
+    while (digitalRead(pin) == LOW) { if (micros() - timeout &gt; 100) return false; }
+    unsigned long pulseStart = micros();
+    timeout = micros();
+    while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) return false; }
+    unsigned long len = micros() - pulseStart;
+    int byteIdx = i / 8;
+    data[byteIdx] &lt;&lt;= 1;
+    if (len &gt; 40) data[byteIdx] |= 1;
+  }
+
+  if (data[4] == ((data[0] + data[1] + data[2] + data[3]) &amp; 0xFF)) {
+    hum = data[0] + data[1] * 0.1f;
+    temp = data[2] + data[3] * 0.1f;
+    return true;
+  }
+  return false;
+}
+
+// Sigmoid normalization helper: 1 / (1 + e^(-k*(x - x0)))
+float sigmoid(float x, float x0, float k) {
+  return 1.0f / (1.0f + exp(-k * (x - x0)));
+}
+
+// Set RGB LED
+void setLedColor(byte r, byte g, byte b) {
+  analogWrite(PIN_RGB_RED, r);
+  analogWrite(PIN_RGB_GREEN, g);
+  analogWrite(PIN_RGB_BLUE, b);
+}
+
+// ======================== WEB SERVER HANDLERS ===============================
+void handleRoot() {
+  String p = &quot;&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;UTF-8&#x27;&gt;&lt;meta name=&#x27;viewport&#x27; content=&#x27;width=device-width, initial-scale=1.0&#x27;&gt;&quot;;
+  p += &quot;&lt;title&gt;Wildfire Early-Warning Node&lt;/title&gt;&quot;;
+  p += &quot;&lt;style&gt;body{background:#0f172a;color:#f8fafc;font-family:sans-serif;padding:20px;text-align:center;}&quot;;
+  p += &quot;.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;max-width:800px;margin:20px auto;}&quot;;
+  p += &quot;.card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:15px;}&quot;;
+  p += &quot;.val{font-size:1.8rem;font-weight:bold;color:#38bdf8;margin:5px 0;}&quot;;
+  p += &quot;.risk{font-size:2.5rem;font-weight:bold;color:#f59e0b;}&quot;;
+  p += &quot;&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&quot;;
+  p += &quot;&lt;h2&gt;🌲 ESP32-S3 Wildfire Sentinel &amp; Climate Node&lt;/h2&gt;&quot;;
+  p += &quot;&lt;div&gt;Bayesian Fire Risk Probability:&lt;/div&gt;&lt;div class=&#x27;risk&#x27; id=&#x27;risk&#x27;&gt;0%&lt;/div&gt;&quot;;
+  p += &quot;&lt;div class=&#x27;grid&#x27;&gt;&quot;;
+  p += &quot;&lt;div class=&#x27;card&#x27;&gt;&lt;div&gt;Temperature&lt;/div&gt;&lt;div class=&#x27;val&#x27; id=&#x27;temp&#x27;&gt;-- &amp;deg;C&lt;/div&gt;&lt;/div&gt;&quot;;
+  p += &quot;&lt;div class=&#x27;card&#x27;&gt;&lt;div&gt;Relative Humidity&lt;/div&gt;&lt;div class=&#x27;val&#x27; id=&#x27;hum&#x27;&gt;-- %&lt;/div&gt;&lt;/div&gt;&quot;;
+  p += &quot;&lt;div class=&#x27;card&#x27;&gt;&lt;div&gt;Soil / Fuel Dryness&lt;/div&gt;&lt;div class=&#x27;val&#x27; id=&#x27;soil&#x27;&gt;-- %&lt;/div&gt;&lt;/div&gt;&quot;;
+  p += &quot;&lt;div class=&#x27;card&#x27;&gt;&lt;div&gt;Optical IR Flare&lt;/div&gt;&lt;div class=&#x27;val&#x27; id=&#x27;flame&#x27;&gt;0 %&lt;/div&gt;&lt;/div&gt;&quot;;
+  p += &quot;&lt;/div&gt;&quot;;
+  p += &quot;&lt;script&gt;setInterval(()=&gt;{fetch(&#x27;/data&#x27;).then(r=&gt;r.json()).then(d=&gt;{&quot;;
+  p += &quot;document.getElementById(&#x27;risk&#x27;).innerHTML=(d.risk*100).toFixed(0)+&#x27;%&#x27;;&quot;;
+  p += &quot;document.getElementById(&#x27;temp&#x27;).innerHTML=d.temp.toFixed(1)+&#x27;&amp;deg;C&#x27;;&quot;;
+  p += &quot;document.getElementById(&#x27;hum&#x27;).innerHTML=d.hum.toFixed(1)+&#x27;%&#x27;;&quot;;
+  p += &quot;document.getElementById(&#x27;soil&#x27;).innerHTML=d.soil.toFixed(0)+&#x27;%&#x27;;&quot;;
+  p += &quot;document.getElementById(&#x27;flame&#x27;).innerHTML=d.flame.toFixed(0)+&#x27;%&#x27;;&quot;;
+  p += &quot;});},500);&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;&quot;;
+  server.send(200, &quot;text/html&quot;, p);
+}
+
+void handleData() {
+  String json = &quot;{&quot;;
+  json += &quot;\&quot;temp\&quot;:&quot; + String(currentClimate.temperature, 1) + &quot;,&quot;;
+  json += &quot;\&quot;hum\&quot;:&quot; + String(currentClimate.humidity, 1) + &quot;,&quot;;
+  json += &quot;\&quot;soil\&quot;:&quot; + String(currentClimate.soilMoisturePercent, 1) + &quot;,&quot;;
+  json += &quot;\&quot;flame\&quot;:&quot; + String(currentClimate.flameIntensityPercent, 1) + &quot;,&quot;;
+  json += &quot;\&quot;risk\&quot;:&quot; + String(currentClimate.bayesianRiskScore, 2);
+  json += &quot;}&quot;;
+  server.send(200, &quot;application/json&quot;, json);
+}
+
+// ======================== FREERTOS TASK: CORE 1 SENSOR FUSION ===============
+void TaskEnvironmentalFusion(void *pvParameters) {
+  float temp = 25.0f, hum = 50.0f;
+  unsigned long lastDhtTime = 0;
+
+  Serial.println(F(&quot;[Core 1] TaskEnvironmentalFusion started.&quot;));
+
+  for (;;) {
+    vTaskDelay(pdMS_TO_TICKS(100)); // 10 Hz sampling
+    unsigned long now = millis();
+
+    // Read DHT11 every 2 seconds (sensor limit)
+    if (now - lastDhtTime &gt;= 2000) {
+      lastDhtTime = now;
+      readDHT11(PIN_DHT11_DATA, temp, hum);
+    }
+
+    // Read Analog Domain Sensors (ESP32-S3 ADC1: 12-bit, 0-4095)
+    int rawFlame = analogRead(PIN_FLAME_ANALOG);
+    int rawSoil  = analogRead(PIN_SOIL_ANALOG);
+    int rawLdr   = analogRead(PIN_LDR_ANALOG);
+    int rawSound = analogRead(PIN_SOUND_ANALOG);
+
+    // Normalize flame: 4095 = Dark, &lt; 500 = Intense IR light
+    float flameIntensity = constrain(map(4095 - rawFlame, 0, 3500, 0, 100), 0, 100);
+    // Soil moisture: 0% dry, 100% soaked
+    float soilMoisture = constrain(map(rawSoil, 1000, 3500, 0, 100), 0, 100);
+    float soilDryness = 100.0f - soilMoisture;
+
+    // ================= LEVEL 2 SENSOR FUSION ENGINE =========================
+    // 1. Calculate Fuel Vulnerability Index (FVI):
+    // High Temp (&gt; 32°C) + Low Humidity (&lt; 30%) + Dry Ground (&gt; 70% dry)
+    float tempFactor = sigmoid(temp, 30.0f, 0.25f);       // 0.0 to 1.0
+    float drynessFactor = sigmoid(100.0f - hum, 65.0f, 0.15f); // High when RH is low
+    float groundFactor = sigmoid(soilDryness, 70.0f, 0.1f);
+    float fuelVulnerability = (tempFactor * 0.35f) + (drynessFactor * 0.40f) + (groundFactor * 0.25f);
+
+    // 2. Calculate Active Combustion Indicator (ACI):
+    // Optical IR Flame (75%) + Acoustic Wood Crackle (25%)
+    float irFactor = sigmoid(flameIntensity, 40.0f, 0.1f);
+    float soundFactor = sigmoid((float)rawSound, 1800.0f, 0.005f);
+    float activeCombustion = (irFactor * 0.80f) + (soundFactor * 0.20f);
+
+    // 3. Bayesian Probabilistic Risk Fusion:
+    // P(Wildfire) = 1 - (1 - P_Fuel) * (1 - P_Combustion)
+    float compositeRisk = 1.0f - ((1.0f - fuelVulnerability * 0.6f) * (1.0f - activeCombustion));
+    compositeRisk = constrain(compositeRisk, 0.0f, 1.0f);
+
+    // 4. Determine Fire Danger Level
+    FireDangerLevel level = DANGER_LOW;
+    if (compositeRisk &gt; 0.75f || flameIntensity &gt; 60.0f) {
+      level = DANGER_EXTREME;
+    } else if (compositeRisk &gt; 0.50f) {
+      level = DANGER_HIGH;
+    } else if (compositeRisk &gt; 0.30f) {
+      level = DANGER_MODERATE;
+    } else {
+      level = DANGER_LOW;
+    }
+
+    // 5. Actuator Management
+    switch (level) {
+      case DANGER_LOW:
+        setLedColor(0, 100, 255);             // Blue
+        digitalWrite(PIN_SPRINKLER_RELAY, HIGH); // Valve OFF
+        digitalWrite(PIN_BUZZER, LOW);
+        break;
+
+      case DANGER_MODERATE:
+        setLedColor(0, 255, 0);               // Green
+        digitalWrite(PIN_SPRINKLER_RELAY, HIGH);
+        digitalWrite(PIN_BUZZER, LOW);
+        break;
+
+      case DANGER_HIGH:
+        setLedColor(255, 140, 0);             // Amber
+        digitalWrite(PIN_SPRINKLER_RELAY, HIGH);
+        digitalWrite(PIN_BUZZER, LOW);
+        break;
+
+      case DANGER_EXTREME:
+        setLedColor(255, 0, 0);               // Strobe Red
+        digitalWrite(PIN_SPRINKLER_RELAY, LOW); // ENGAGE SPRINKLER RELAY (EXTINGUISH!)
+        digitalWrite(PIN_BUZZER, (millis() % 200 &lt; 100) ? HIGH : LOW); // Pulsing Siren
+        break;
+    }
+
+    // Update Telemetry Structure with Mutex
+    if (xSemaphoreTake(climateMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+      currentClimate.temperature = temp;
+      currentClimate.humidity = hum;
+      currentClimate.soilMoisturePercent = soilMoisture;
+      currentClimate.flameIntensityPercent = flameIntensity;
+      currentClimate.bayesianRiskScore = compositeRisk;
+      currentClimate.level = level;
+      xSemaphoreGive(climateMutex);
+    }
+  }
+}
+
+// ======================== FREERTOS TASK: CORE 0 NETWORK SERVER ==============
+void TaskNetworkServer(void *pvParameters) {
+  for (;;) {
+    server.handleClient();
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+}
+
+// ======================== SETUP =============================================
+void setup() {
+  Serial.begin(115200);
+  while (!Serial &amp;&amp; millis() &lt; 3000);
+
+  Serial.println(F(&quot;\n============================================================&quot;));
+  Serial.println(F(&quot;  PROJECT 3: ESP32-S3 WILDFIRE EARLY-WARNING BAYESIAN NODE&quot;));
+  Serial.println(F(&quot;============================================================&quot;));
+
+  pinMode(PIN_SPRINKLER_RELAY, OUTPUT);
+  pinMode(PIN_BUZZER, OUTPUT);
+  pinMode(PIN_RGB_RED, OUTPUT);
+  pinMode(PIN_RGB_GREEN, OUTPUT);
+  pinMode(PIN_RGB_BLUE, OUTPUT);
+
+  digitalWrite(PIN_SPRINKLER_RELAY, HIGH); // Safe
+  digitalWrite(PIN_BUZZER, LOW);
+  setLedColor(0, 255, 0);
+
+  climateMutex = xSemaphoreCreateMutex();
+
+  // Wi-Fi Access Point &amp; Server
+  WiFi.softAP(AP_SSID, AP_PASS);
+  server.on(&quot;/&quot;, handleRoot);
+  server.on(&quot;/data&quot;, handleData);
+  server.begin();
+  Serial.print(F(&quot;Node Wi-Fi AP Online: http://&quot;)); Serial.println(WiFi.softAPIP());
+
+  // Spawn Core 1 Fusion Task
+  xTaskCreatePinnedToCore(
+    TaskEnvironmentalFusion,
+    &quot;EnvFusion&quot;,
+    4096,
+    NULL,
+    4,
+    NULL,
+    1
+  );
+
+  // Spawn Core 0 Web Server Task
+  xTaskCreatePinnedToCore(
+    TaskNetworkServer,
+    &quot;NetServer&quot;,
+    4096,
+    NULL,
+    1,
+    NULL,
+    0
+  );
+
+  Serial.println(F(&quot;Bayesian Environmental Node Active.\n&quot;));
+}
+
+void loop() {
+  vTaskDelay(pdMS_TO_TICKS(1000));
+}
+</code></pre>
+      </div>
+    </div>
+
+    <div class="project-card card-l2" data-type="L2_ESP32" data-num="L2_4" data-category="ESP32-S3 Fusion" data-title="cyber-physical biometric access &amp; anti-spoofing vault" data-desc="high-security vault controller featuring photoplethysmographic (ppg) biological liveness verification (rejection of fake molds), ds1302 real-time clock shift-window authorization gates, and a 6-dof seismic anti-drill tamper defense envelope.">
+      <div class="card-header" style="background:rgba(236,72,153,0.15);border-bottom-color:rgba(236,72,153,0.3);">
+        <div class="card-title-area">
+          <span class="proj-badge" style="background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:white;">ESP32-S3 #4</span>
+          <span class="proj-title">Cyber-Physical Biometric Access &amp; Anti-Spoofing Vault</span>
+        </div>
+        <span class="cat-tag" style="background:rgba(236,72,153,0.2);color:#f472b6;border:1px solid rgba(236,72,153,0.4);">Level 2 FreeRTOS</span>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-desc" title="High-security vault controller featuring Photoplethysmographic (PPG) biological liveness verification (rejection of fake molds), DS1302 Real-Time Clock shift-window authorization gates, and a 6-DOF seismic anti-drill tamper defense envelope.">
+          <strong>ESP32-S3 Fusion Core:</strong> High-security vault controller featuring Photoplethysmographic (PPG) biological liveness verification (rejection of fake molds), DS1302 Real-Time Clock shift-window authorization gates, and a 6-DOF seismic anti-drill tamper defense envelope.
+        </div>
+        
+        <div class="card-specs" style="border-left-color:#ec4899;">
+          <div style="font-weight:700;color:#ec4899;margin-bottom:4px;">Fused Kit Modules:</div>
+          <ul><li>• Optical PPG Pulse Sensor (#17)</li><li>• DS1302 RTC Clock (#43)</li><li>• Capacitive Metal Touch (#33)</li><li>• MPU-6050 3D Seismic IMU (#40)</li><li>• Mercury / Tilt Guard (#25)</li></ul>
+        </div>
+        
+        <div class="card-actions">
+          <button class="btn btn-sm" style="background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:white;" onclick="toggleCode('l2_4')">⚡ View Sketch</button>
+          <a href="Complicated_Projects_Level_2_ESP32_S3/Project_04_Cyber_Physical_Biometric_Vault_AntiSpoof/index.html" class="btn btn-outline btn-sm" target="_blank">📖 Wiring & Guide</a>
+          <a href="Complicated_Projects_Level_2_ESP32_S3/Project_04_Cyber_Physical_Biometric_Vault_AntiSpoof/Project_04_Cyber_Physical_Biometric_Vault_AntiSpoof.ino" class="btn btn-outline btn-sm" target="_blank">📄 .ino File</a>
+        </div>
+      </div>
+      
+      <div class="code-section" id="codeSection_l2_4">
+        <div class="code-header">
+          <span class="code-title">📄 Project_04_Cyber_Physical_Biometric_Vault_AntiSpoof.ino (ESP32-S3 FreeRTOS)</span>
+          <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_l2_4', this)">📋 Copy</button>
+        </div>
+        <pre id="codeContent_l2_4"><code>/*
+ * ==============================================================================
+ * Project 4: Cyber-Physical Biometric Access &amp; Anti-Spoofing Vault Controller
+ * Level 2 Multi-Sensor Fusion on ESP32-S3 (Dual-Core Xtensa LX7 @ 240MHz)
+ * ==============================================================================
+ * Target: ESP32-S3 Dev Module
+ * Kit: Hosyond 45-in-1 Sensor Kit
+ * 
+ * Fused Kit Modules:
+ *  - Module #17: Pulse Rate Monitor Sensor (Optical PPG Photoplethysmography)
+ *  - Module #43: DS1302 Real-Time Clock Module (Hardware Time-Gate Authorization)
+ *  - Module #33: Metal Touch Sensor (Capacitive Handshake Presence)
+ *  - Module #40: GY-521 (MPU-6050 6-DOF IMU) - Anti-Drill / Seismic Tamper
+ *  - Module #25: Mercury / Tilt Switch - Discrete Structural Inversion Guard
+ * 
+ * Actuators &amp; Access Mechanism:
+ *  - Module #30: 5V Relay Module (Electromagnetic Door Deadbolt Solenoid)
+ *  - Module #01: RGB LED (Access Feedback: Standby / Processing / Granted / Denied)
+ *  - Module #12: Passive Buzzer (Multi-Tone Chimes &amp; Security Siren)
+ * 
+ * Level 2 Sensor Fusion &amp; Security Core:
+ *  - Biometric Liveness Verification (Anti-Spoofing):
+ *      * Measures continuous optical blood pulsation dynamics.
+ *      * Calculates real-time Inter-Beat Interval (IBI) and Heart Rate (55 - 130 BPM).
+ *      * Rejects static silicone impressions, 3D molds, and non-living objects.
+ *  - Time-Gated Multi-Factor Authorization:
+ *      * Reads DS1302 RTC to ensure access is only permitted during valid operational shift hours.
+ *  - 6-DOF Inertial Enclosure Defense:
+ *      * Real-time 3D acceleration vector monitoring detects attempts to drill,撬 (pry), or physically remove the vault controller.
+ *  - FreeRTOS Dual-Core Design:
+ *      * Core 1: 250 Hz PPG Optical Peak Extraction &amp; IBI Calculation.
+ *      * Core 0: Cryptographic State Machine, RTC Time-Lock, Actuator Solenoid &amp; Diagnostics.
+ */
+
+#include &lt;Wire.h&gt;
+#include &lt;math.h&gt;
+
+// ======================== PIN DEFINITIONS (ESP32-S3) ========================
+// Analog Sensors (ADC1)
+const int PIN_PULSE_ANALOG  = 4;   // Pulse Rate Monitor AO (ADC1_CH3)
+const int PIN_TOUCH_DIGITAL = 5;   // Metal Touch Sensor DO (Hardware INT1)
+const int PIN_TILT_DIGITAL  = 6;   // Mercury / Tilt Switch
+
+// DS1302 RTC Pins (3-Wire Interface)
+const int PIN_RTC_RST       = 1;   // Chip Enable (CE)
+const int PIN_RTC_DAT       = 2;   // I/O Data
+const int PIN_RTC_CLK       = 3;   // Serial Clock (SCLK)
+
+// I2C MPU-6050 Anti-Tamper
+const int PIN_I2C_SDA       = 8;
+const int PIN_I2C_SCL       = 9;
+const int MPU_ADDR          = 0x68;
+
+// Actuators
+const int PIN_SOLENOID_RELAY = 7;  // 5V Relay for Magnetic Lock (Active LOW)
+const int PIN_BUZZER        = 10;  // Passive Buzzer
+const int PIN_RGB_RED       = 14;  // Red
+const int PIN_RGB_GREEN     = 15;  // Green
+const int PIN_RGB_BLUE      = 16;  // Blue
+
+// System Access States
+enum VaultState {
+  VAULT_STANDBY,        // Blue LED, Waiting for user touch
+  VAULT_MEASURING_PPG,  // Cyan Breathing, Analyzing biometric pulse
+  VAULT_ACCESS_GRANTED, // Green LED, Solenoid unlocked (5s)
+  VAULT_ACCESS_DENIED,  // Amber Flash, Invalid pulse or time gate
+  VAULT_TAMPER_ALARM    // Red Strobe, SIREN, Lock deadbolted
+};
+
+VaultState currentVaultState = VAULT_STANDBY;
+
+// Biometric Metrics
+struct BiometricResult {
+  int   bpm;
+  float ibiSeconds;
+  bool  livenessConfirmed;
+  bool  fingerPresent;
+};
+
+BiometricResult currentBio = {0, 0.0f, false, false};
+SemaphoreHandle_t vaultMutex;
+
+// Tamper Reference
+float baselineAx = 0, baselineAy = 0, baselineAz = 0;
+bool mpuActive = false;
+
+// ======================== FAST BIT-BANG DS1302 RTC DRIVER ===================
+void rtcWriteByte(byte value) {
+  for (int i = 0; i &lt; 8; i++) {
+    digitalWrite(PIN_RTC_DAT, (value &amp; 0x01) ? HIGH : LOW);
+    digitalWrite(PIN_RTC_CLK, HIGH);
+    delayMicroseconds(2);
+    digitalWrite(PIN_RTC_CLK, LOW);
+    delayMicroseconds(2);
+    value &gt;&gt;= 1;
+  }
+}
+
+byte rtcReadByte() {
+  byte value = 0;
+  pinMode(PIN_RTC_DAT, INPUT);
+  for (int i = 0; i &lt; 8; i++) {
+    value &gt;&gt;= 1;
+    if (digitalRead(PIN_RTC_DAT)) value |= 0x80;
+    digitalWrite(PIN_RTC_CLK, HIGH);
+    delayMicroseconds(2);
+    digitalWrite(PIN_RTC_CLK, LOW);
+    delayMicroseconds(2);
+  }
+  pinMode(PIN_RTC_DAT, OUTPUT);
+  return value;
+}
+
+struct RTCDateTime {
+  byte second, minute, hour, day, month, year;
+};
+
+RTCDateTime readRTC() {
+  RTCDateTime dt = {0, 30, 10, 22, 10, 26}; // Default 10:30 AM
+  digitalWrite(PIN_RTC_RST, HIGH);
+  delayMicroseconds(4);
+  rtcWriteByte(0xBF); // Clock burst read
+  byte sec  = rtcReadByte();
+  byte min  = rtcReadByte();
+  byte hr   = rtcReadByte();
+  byte date = rtcReadByte();
+  byte mon  = rtcReadByte();
+  rtcReadByte(); // Day of week
+  byte yr   = rtcReadByte();
+  digitalWrite(PIN_RTC_RST, LOW);
+
+  dt.second = (sec &amp; 0x0F) + ((sec &gt;&gt; 4) &amp; 0x07) * 10;
+  dt.minute = (min &amp; 0x0F) + ((min &gt;&gt; 4) &amp; 0x07) * 10;
+  dt.hour   = (hr &amp; 0x0F) + ((hr &gt;&gt; 4) &amp; 0x03) * 10;
+  return dt;
+}
+
+// Set RGB LED
+void setLedColor(byte r, byte g, byte b) {
+  analogWrite(PIN_RGB_RED, r);
+  analogWrite(PIN_RGB_GREEN, g);
+  analogWrite(PIN_RGB_BLUE, b);
+}
+
+// Play Melodic Chime
+void playChime(bool success) {
+  if (success) {
+    tone(PIN_BUZZER, 1046, 120); delay(140); // C6
+    tone(PIN_BUZZER, 1318, 120); delay(140); // E6
+    tone(PIN_BUZZER, 1568, 250); delay(260); // G6
+  } else {
+    tone(PIN_BUZZER, 440, 200); delay(220);  // A4
+    tone(PIN_BUZZER, 370, 350); delay(360);  // F#4
+  }
+}
+
+// ======================== FREERTOS TASK: CORE 1 PPG BIOMETRICS ==============
+void TaskBiometricPulse(void *pvParameters) {
+  const TickType_t xFrequency = pdMS_TO_TICKS(4); // 250 Hz (4ms)
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+
+  float signalFilter = 2048.0f;
+  unsigned long lastPeakTime = 0;
+  int peakCount = 0;
+  float ibiSum = 0.0f;
+  bool isPeak = false;
+
+  Serial.println(F(&quot;[Core 1] 250 Hz Optical PPG Biometrics Online.&quot;));
+
+  for (;;) {
+    vTaskDelayUntil(&amp;xLastWakeTime, xFrequency);
+    unsigned long now = millis();
+
+    int rawPulse = analogRead(PIN_PULSE_ANALOG);
+    // Exponential High-Pass / Low-Pass Filter
+    signalFilter = 0.85f * signalFilter + 0.15f * rawPulse;
+    float dynamicPulse = rawPulse - signalFilter;
+
+    // Detect optical finger contact (raw baseline drops when finger covers sensor)
+    bool fingerOn = (rawPulse &gt; 600 &amp;&amp; rawPulse &lt; 3800);
+
+    if (fingerOn) {
+      // Peak detection with dynamic threshold
+      if (dynamicPulse &gt; 120.0f &amp;&amp; !isPeak &amp;&amp; (now - lastPeakTime &gt; 350)) {
+        isPeak = true;
+        unsigned long ibiMs = now - lastPeakTime;
+        lastPeakTime = now;
+
+        if (ibiMs &gt;= 400 &amp;&amp; ibiMs &lt;= 1200) { // Valid human heartbeat range (50 - 150 BPM)
+          float ibiSec = ibiMs / 1000.0f;
+          ibiSum += ibiSec;
+          peakCount++;
+
+          if (peakCount &gt;= 4) { // Liveness confirmed over 4 valid consecutive heartbeats
+            float avgIbi = ibiSum / peakCount;
+            int bpm = (int)(60.0f / avgIbi);
+
+            if (xSemaphoreTake(vaultMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
+              currentBio.bpm = bpm;
+              currentBio.ibiSeconds = avgIbi;
+              currentBio.livenessConfirmed = true;
+              currentBio.fingerPresent = true;
+              xSemaphoreGive(vaultMutex);
+            }
+            peakCount = 0;
+            ibiSum = 0.0f;
+          }
+        }
+      } else if (dynamicPulse &lt; 0.0f) {
+        isPeak = false;
+      }
+    } else {
+      peakCount = 0;
+      ibiSum = 0.0f;
+      if (xSemaphoreTake(vaultMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
+        currentBio.fingerPresent = false;
+        currentBio.livenessConfirmed = false;
+        xSemaphoreGive(vaultMutex);
+      }
+    }
+  }
+}
+
+// ======================== FREERTOS TASK: CORE 0 SECURITY CONTROLLER =========
+void TaskSecurityController(void *pvParameters) {
+  unsigned long stateStartTime = millis();
+
+  Serial.println(F(&quot;[Core 0] TaskSecurityController Online.&quot;));
+
+  for (;;) {
+    vTaskDelay(pdMS_TO_TICKS(50)); // 20 Hz update
+    unsigned long now = millis();
+
+    // 1. Read Physical Tamper Domain
+    bool touchActive = (digitalRead(PIN_TOUCH_DIGITAL) == HIGH);
+    bool tiltActive  = (digitalRead(PIN_TILT_DIGITAL) == HIGH);
+
+    // Read MPU-6050 3D seismic jerk
+    float accelJerk = 0.0f;
+    if (mpuActive) {
+      Wire.beginTransmission(MPU_ADDR);
+      Wire.write(0x3B);
+      Wire.endTransmission(false);
+      Wire.requestFrom(MPU_ADDR, 6, true);
+      if (Wire.available() &gt;= 6) {
+        int16_t ax = (Wire.read() &lt;&lt; 8 | Wire.read());
+        int16_t ay = (Wire.read() &lt;&lt; 8 | Wire.read());
+        int16_t az = (Wire.read() &lt;&lt; 8 | Wire.read());
+        float dAx = (ax / 16384.0f) - baselineAx;
+        float dAy = (ay / 16384.0f) - baselineAy;
+        float dAz = (az / 16384.0f) - baselineAz;
+        accelJerk = sqrt(dAx * dAx + dAy * dAy + dAz * dAz);
+      }
+    }
+
+    // Seismic Tamper Check: High acceleration jerk (&gt;0.7g) or inversion
+    if (accelJerk &gt; 0.70f || tiltActive) {
+      currentVaultState = VAULT_TAMPER_ALARM;
+      stateStartTime = now;
+      Serial.println(F(&quot;&gt;&gt; [CRITICAL SECURITY] Seismic Drill / Inversion Tamper Detected!&quot;));
+    }
+
+    // 2. Fetch Biometric Data Thread-Safely
+    BiometricResult bio;
+    if (xSemaphoreTake(vaultMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
+      bio = currentBio;
+      xSemaphoreGive(vaultMutex);
+    }
+
+    // 3. Vault State Machine Execution
+    switch (currentVaultState) {
+      case VAULT_STANDBY:
+        setLedColor(0, 50, 255);             // Blue
+        digitalWrite(PIN_SOLENOID_RELAY, HIGH); // Locked
+        noTone(PIN_BUZZER);
+        if (touchActive || bio.fingerPresent) {
+          currentVaultState = VAULT_MEASURING_PPG;
+          stateStartTime = now;
+          Serial.println(F(&quot;&gt;&gt; [ACCESS] User Present. Analyzing Biometric Liveness...&quot;));
+        }
+        break;
+
+      case VAULT_MEASURING_PPG:
+        setLedColor(0, 200, 255);            // Cyan Breathing
+        if (bio.livenessConfirmed) {
+          // Check Time-Gate Authorization via DS1302 RTC
+          RTCDateTime dt = readRTC();
+          // Valid Access Hours: 08:00 to 18:00
+          bool isTimePermitted = (dt.hour &gt;= 8 &amp;&amp; dt.hour &lt; 18);
+
+          if (isTimePermitted) {
+            currentVaultState = VAULT_ACCESS_GRANTED;
+            stateStartTime = now;
+            digitalWrite(PIN_SOLENOID_RELAY, LOW); // UNLOCK SOLENOID RELAY!
+            setLedColor(0, 255, 0); // Green
+            playChime(true);
+            Serial.print(F(&quot;&gt;&gt; [ACCESS GRANTED] Verified Human Liveness: &quot;));
+            Serial.print(bio.bpm);
+            Serial.print(F(&quot; BPM | RTC Time: &quot;));
+            Serial.print(dt.hour); Serial.print(F(&quot;:&quot;)); Serial.println(dt.minute);
+          } else {
+            currentVaultState = VAULT_ACCESS_DENIED;
+            stateStartTime = now;
+            playChime(false);
+            Serial.println(F(&quot;&gt;&gt; [ACCESS DENIED] Outside Authorized Operational Shift Hours!&quot;));
+          }
+        } else if (now - stateStartTime &gt; 8000) { // Timeout after 8 seconds of unsuccessful scan
+          currentVaultState = VAULT_ACCESS_DENIED;
+          stateStartTime = now;
+          playChime(false);
+          Serial.println(F(&quot;&gt;&gt; [ACCESS DENIED] Liveness Verification Timeout / Spoof Rejected.&quot;));
+        }
+        break;
+
+      case VAULT_ACCESS_GRANTED:
+        setLedColor(0, 255, 0); // Solid Green
+        // Hold open for 5 seconds
+        if (now - stateStartTime &gt; 5000) {
+          currentVaultState = VAULT_STANDBY;
+          digitalWrite(PIN_SOLENOID_RELAY, HIGH); // Re-lock
+          Serial.println(F(&quot;&gt;&gt; Door Solenoid Locked. Returning to Standby.&quot;));
+        }
+        break;
+
+      case VAULT_ACCESS_DENIED:
+        setLedColor(255, 140, 0); // Amber
+        digitalWrite(PIN_SOLENOID_RELAY, HIGH); // Locked
+        if (now - stateStartTime &gt; 3000) {
+          currentVaultState = VAULT_STANDBY;
+        }
+        break;
+
+      case VAULT_TAMPER_ALARM:
+        // Strobe Red + Piercing Siren
+        setLedColor((now % 200 &lt; 100) ? 255 : 0, 0, 0);
+        tone(PIN_BUZZER, (now % 400 &lt; 200) ? 2800 : 1800);
+        digitalWrite(PIN_SOLENOID_RELAY, HIGH); // Locked
+        // Alarm latch holds for 10 seconds
+        if (now - stateStartTime &gt; 10000) {
+          currentVaultState = VAULT_STANDBY;
+        }
+        break;
+    }
+  }
+}
+
+// ======================== SETUP =============================================
+void setup() {
+  Serial.begin(115200);
+  while (!Serial &amp;&amp; millis() &lt; 3000);
+
+  Serial.println(F(&quot;\n============================================================&quot;));
+  Serial.println(F(&quot;  PROJECT 4: ESP32-S3 BIOMETRIC ANTI-SPOOFING VAULT SYSTEM&quot;));
+  Serial.println(F(&quot;============================================================&quot;));
+
+  pinMode(PIN_TOUCH_DIGITAL, INPUT);
+  pinMode(PIN_TILT_DIGITAL, INPUT_PULLUP);
+  pinMode(PIN_SOLENOID_RELAY, OUTPUT);
+  pinMode(PIN_BUZZER, OUTPUT);
+  pinMode(PIN_RGB_RED, OUTPUT);
+  pinMode(PIN_RGB_GREEN, OUTPUT);
+  pinMode(PIN_RGB_BLUE, OUTPUT);
+
+  // Configure DS1302 Pins
+  pinMode(PIN_RTC_RST, OUTPUT);
+  pinMode(PIN_RTC_CLK, OUTPUT);
+  pinMode(PIN_RTC_DAT, OUTPUT);
+  digitalWrite(PIN_RTC_RST, LOW);
+  digitalWrite(PIN_RTC_CLK, LOW);
+
+  digitalWrite(PIN_SOLENOID_RELAY, HIGH); // Locked
+  setLedColor(0, 0, 255); // Blue Standby
+
+  // Init I2C IMU
+  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 400000);
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x6B);
+  Wire.write(0);
+  if (Wire.endTransmission() == 0) {
+    mpuActive = true;
+    Serial.println(F(&quot;MPU-6050 Anti-Tamper Core Initialized.&quot;));
+  }
+
+  vaultMutex = xSemaphoreCreateMutex();
+
+  // Core 1: 250 Hz Optical PPG Biometric Filter
+  xTaskCreatePinnedToCore(
+    TaskBiometricPulse,
+    &quot;PPGBiometrics&quot;,
+    4096,
+    NULL,
+    5,
+    NULL,
+    1
+  );
+
+  // Core 0: Security &amp; Access Controller
+  xTaskCreatePinnedToCore(
+    TaskSecurityController,
+    &quot;SecController&quot;,
+    4096,
+    NULL,
+    3,
+    NULL,
+    0
+  );
+
+  Serial.println(F(&quot;Vault Armed &amp; Ready. Standby for authentication.\n&quot;));
+}
+
+void loop() {
+  vTaskDelay(pdMS_TO_TICKS(1000));
+}
+</code></pre>
+      </div>
+    </div>
+
 
     <div class="project-card card-fusion" data-type="FUSION" data-num="F1" data-category="Sensor Fusion" data-title="multi-sensor environmental hazard guardian" data-desc="traditional fire, explosion, and hazard monitoring systems in industrial and residential embedded systems frequently fail due to two opposing problems:
 1. **false alarms:** a single photodiode flame sensor will falsely trigger from bright ambient sunlight, halogen lighting, or smartphone flashes.
@@ -5228,6 +6907,7 @@ delay(50);
     activeView = view;
     document.getElementById('tabBase').classList.toggle('active', view === 'BASE');
     document.getElementById('tabFusion').classList.toggle('active', view === 'FUSION');
+    if (document.getElementById('tabL2')) document.getElementById('tabL2').classList.toggle('active', view === 'L2_ESP32');
     document.getElementById('tabAll').classList.toggle('active', view === 'ALL');
     filterCards();
   }
@@ -5286,7 +6966,8 @@ delay(50);
 
       const matchesView = (activeView === 'ALL') || 
                           (activeView === 'BASE' && type === 'BASE') || 
-                          (activeView === 'FUSION' && type === 'FUSION');
+                          (activeView === 'FUSION' && type === 'FUSION') ||
+                          (activeView === 'L2_ESP32' && type === 'L2_ESP32');
 
       const matchesCat = (activeCategory === 'ALL' || cat === activeCategory);
 

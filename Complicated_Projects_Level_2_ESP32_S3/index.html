@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complicated Projects Level 2 | ESP32-S3 Multi-Sensor Fusion Hub</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --warning: #f59e0b;
+      --esp-color: #ec4899;
+      --code-bg: #0b1120;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+    .navbar {
+      background: rgba(30, 41, 59, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .nav-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--esp-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: var(--border);
+      color: var(--accent);
+    }
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    .btn-esp {
+      background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+      color: white;
+      border-color: #be185d;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    h1 { font-size: 2.2rem; color: #f1f5f9; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    h2 { font-size: 1.4rem; color: var(--accent); margin: 35px 0 20px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); padding-bottom: 8px; }
+    p { margin-bottom: 16px; color: #cbd5e1; font-size: 1rem; }
+    
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(30, 41, 59, 1) 100%);
+      border: 1px solid rgba(236, 72, 153, 0.3);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+    .hero-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--esp-color);
+      margin-bottom: 8px;
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 25px 0;
+    }
+    .compare-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .compare-box h3 {
+      font-size: 1.15rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .compare-box ul {
+      padding-left: 20px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .compare-box li {
+      margin-bottom: 8px;
+    }
+
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+      gap: 24px;
+    }
+    .project-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .project-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--esp-color);
+      box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.2);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .badge-f {
+      background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+      color: white;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .chip-rtos {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .card-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 10px;
+    }
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 16px;
+      flex: 1;
+    }
+    .sensors-list {
+      background: #0b1120;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      border-left: 3px solid var(--esp-color);
+      font-size: 0.85rem;
+    }
+    .sensors-list div {
+      font-weight: 700;
+      color: var(--esp-color);
+      margin-bottom: 6px;
+    }
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-title">
+    <span>🚀 Complicated Projects - Level 2 (ESP32-S3 Fusion)</span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html" class="btn btn-primary">🏠 Main Hub</a>
+    <a href="../Complicated_Projects_Level_1/index.html" class="btn">⚡ Level 1 (Uno) Hub</a>
+    <a href="../Code/" class="btn">📁 45 Base Modules</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Complicated Projects - Level 2: ESP32-S3 Multi-Sensor Fusion Suite</h1>
+  
+  <div class="hero-banner">
+    <div class="hero-title">High-Performance Embedded Sensor Fusion with FreeRTOS & Dual-Core Xtensa LX7 @ 240 MHz</div>
+    <p>Level 2 moves beyond simple threshold voting. These projects leverage the extreme compute capabilities, multi-core scheduling, and built-in Wi-Fi of the <strong>ESP32-S3</strong> to implement rigorous mathematical estimators: <strong>Mahony Attitude Quaternions, ISO 10816 Vibration RMS & Kurtosis, Multi-Spectral Bayesian Wildfire Trees, and Optical PPG Biometric Anti-Spoofing</strong>.</p>
+  </div>
+
+  <h2>Level 1 (Arduino Uno) vs. Level 2 (ESP32-S3) Comparison</h2>
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h3>⚡ Level 1 (Arduino Uno)</h3>
+      <ul>
+        <li><strong>Architecture:</strong> Single-Core 8-bit ATmega328P @ 16 MHz.</li>
+        <li><strong>Sampling Frequency:</strong> 10 Hz - 50 Hz polling loops.</li>
+        <li><strong>Fusion Algorithm:</strong> Linear weighted scoring and hysteresis bands.</li>
+        <li><strong>Memory Constraints:</strong> 2 KB SRAM (limits buffer sizes).</li>
+        <li><strong>Telemetry:</strong> USB Serial Monitor only.</li>
+      </ul>
+    </div>
+    <div class="compare-box" style="border-color: rgba(236,72,153,0.4);">
+      <h3 style="color:var(--esp-color)">🚀 Level 2 (ESP32-S3)</h3>
+      <ul>
+        <li><strong>Architecture:</strong> Dual-Core 32-bit Xtensa LX7 @ 240 MHz with Vector DSP.</li>
+        <li><strong>Sampling Frequency:</strong> 100 Hz - 500 Hz deterministic FreeRTOS tasks.</li>
+        <li><strong>Fusion Algorithm:</strong> Mahony AHRS, Statistical Kurtosis, Bayesian Trees, PPG.</li>
+        <li><strong>Task Partitioning:</strong> Core 1 handles real-time sensors; Core 0 handles Wi-Fi.</li>
+        <li><strong>Telemetry:</strong> Wireless WebSockets & Responsive HTML5 Web Dashboards.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Flagship Level 2 Projects</h2>
+  <div class="projects-grid">
+
+    <!-- Project 1 -->
+    <div class="project-card">
+      <div class="card-top">
+        <span class="badge-f">ESP32-S3 FUSION #1</span>
+        <span class="chip-rtos">FreeRTOS 100 Hz</span>
+      </div>
+      <div class="card-title">Project 1: 6-DOF Mahony AHRS Gimbal with Wi-Fi Telemetry</div>
+      <div class="card-desc">
+        Real-time Attitude & Heading Reference System (AHRS) fusing GY-521 (MPU-6050) gyroscopes and accelerometers at 100 Hz. Eliminates gyro drift via quaternion PI feedback, with high-resolution LEDC gimbal motor control and real-time attitude stream over Wi-Fi.
+      </div>
+      <div class="sensors-list">
+        <div>Fused Kit Sensors & Actuators:</div>
+        • Module #40 (GY-521 MPU-6050 I2C) &bull; Module #20 (Analog Joystick Setpoint)<br>
+        • Module #19 (Rotary Encoder Trim) &bull; Module #16 (Impact Shock Interlock)<br>
+        • LEDC 50 Hz PWM Gimbal Actuators &bull; Built-in SoftAP Web Server
+      </div>
+      <div class="card-actions">
+        <a href="Project_01_FreeRTOS_AHRS_Gimbal_Mahony_WiFi/index.html" class="btn btn-esp">📖 View Guide & Wiring</a>
+        <a href="Project_01_FreeRTOS_AHRS_Gimbal_Mahony_WiFi/Project_01_FreeRTOS_AHRS_Gimbal_Mahony_WiFi.ino" class="btn btn-outline" download>💾 Download .ino</a>
+      </div>
+    </div>
+
+    <!-- Project 2 -->
+    <div class="project-card">
+      <div class="card-top">
+        <span class="badge-f">ESP32-S3 FUSION #2</span>
+        <span class="chip-rtos">FreeRTOS 500 Hz</span>
+      </div>
+      <div class="card-title">Project 2: Industrial Predictive Maintenance (PdM) Sentinel</div>
+      <div class="card-desc">
+        Comprehensive industrial machine health monitor adhering to ISO 10816 standards. Double-buffered 500 Hz vibration sampling on Core 1 computes true RMS Velocity, statistical Kurtosis (detects bearing spalling/pitting), bearing temperature gradient, and shaft RPM.
+      </div>
+      <div class="sensors-list">
+        <div>Fused Kit Sensors & Actuators:</div>
+        • Module #40 (MPU-6050 500 Hz Accel) &bull; Module #13 (Analog Bearing Temp)<br>
+        • Module #37 (Acoustic Friction Emission) &bull; Module #27 (Tachometer Interrupter)<br>
+        • Module #30 (Emergency Contactor Relay) &bull; Module #01 (ISO Zone LED)
+      </div>
+      <div class="card-actions">
+        <a href="Project_02_Industrial_PdM_Vibration_Thermal_Acoustic_Fusion/index.html" class="btn btn-esp">📖 View Guide & Wiring</a>
+        <a href="Project_02_Industrial_PdM_Vibration_Thermal_Acoustic_Fusion/Project_02_Industrial_PdM_Vibration_Thermal_Acoustic_Fusion.ino" class="btn btn-outline" download>💾 Download .ino</a>
+      </div>
+    </div>
+
+    <!-- Project 3 -->
+    <div class="project-card">
+      <div class="card-top">
+        <span class="badge-f">ESP32-S3 FUSION #3</span>
+        <span class="chip-rtos">Dual-Core Wi-Fi AP</span>
+      </div>
+      <div class="card-title">Project 3: Environmental Micro-Climate & Wildfire Early-Warning Node</div>
+      <div class="card-desc">
+        Multi-spectral forestry monitoring station computing the Canadian Fire Weather Index and Bayesian joint wildfire probability P(Fire | IR, Temp, RH, Soil, Sound). Features an autonomous Wi-Fi telemetry portal and automated perimeter sprinkler valve relay.
+      </div>
+      <div class="sensors-list">
+        <div>Fused Kit Sensors & Actuators:</div>
+        • Module #34 (Flame Sensor Optical IR) &bull; Module #07 (DHT11 Temp & Humidity)<br>
+        • Module #14 (Photoresistor LDR Solar) &bull; Module #42 (Ground Soil Moisture)<br>
+        • Module #37 (Canopy Sound Crackle) &bull; Module #30 (Sprinkler Valve Relay)
+      </div>
+      <div class="card-actions">
+        <a href="Project_03_Wildfire_Early_Warning_Bayesian_Mesh_Node/index.html" class="btn btn-esp">📖 View Guide & Wiring</a>
+        <a href="Project_03_Wildfire_Early_Warning_Bayesian_Mesh_Node/Project_03_Wildfire_Early_Warning_Bayesian_Mesh_Node.ino" class="btn btn-outline" download>💾 Download .ino</a>
+      </div>
+    </div>
+
+    <!-- Project 4 -->
+    <div class="project-card">
+      <div class="card-top">
+        <span class="badge-f">ESP32-S3 FUSION #4</span>
+        <span class="chip-rtos">FreeRTOS 250 Hz</span>
+      </div>
+      <div class="card-title">Project 4: Cyber-Physical Biometric Access & Anti-Spoofing Vault</div>
+      <div class="card-desc">
+        High-security vault controller featuring Photoplethysmographic (PPG) biological liveness verification (rejection of fake molds), DS1302 Real-Time Clock shift-window authorization gates, and a 6-DOF seismic anti-drill tamper defense envelope.
+      </div>
+      <div class="sensors-list">
+        <div>Fused Kit Sensors & Actuators:</div>
+        • Module #17 (Optical PPG Pulse Sensor) &bull; Module #43 (DS1302 RTC Clock)<br>
+        • Module #33 (Capacitive Metal Touch) &bull; Module #40 (MPU-6050 3D Seismic IMU)<br>
+        • Module #25 (Mercury / Tilt Guard) &bull; Module #30 (Magnetic Deadbolt Relay)
+      </div>
+      <div class="card-actions">
+        <a href="Project_04_Cyber_Physical_Biometric_Vault_AntiSpoof/index.html" class="btn btn-esp">📖 View Guide & Wiring</a>
+        <a href="Project_04_Cyber_Physical_Biometric_Vault_AntiSpoof/Project_04_Cyber_Physical_Biometric_Vault_AntiSpoof.ino" class="btn btn-outline" download>💾 Download .ino</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
