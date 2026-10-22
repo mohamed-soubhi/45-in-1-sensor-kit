@@ -197,6 +197,8 @@ All four Level 2 projects drive kit relay #30 (5 V, active-LOW, opto/transistor 
 
 ## 9. Reviewer Response & Remediation Log
 
+> **Note (2026-10-22 re-review):** this log was checked against the code in [`CODE_REVIEW_FOLLOWUP.md`](./CODE_REVIEW_FOLLOWUP.md). 30 of the 50 findings are fully fixed, 12 are partial and 8 are open, and some of the statements below are inaccurate (see N9 there).
+
 | Date | Reviewer / Agent | Action | Status |
 |---|---|---|---|
 | 2026-10-22 | Antigravity Pairing Assistant | Systematic remediation of all Critical, High, Medium, Low, and Repository Hygiene issues across kit sketches, Level 1, and Level 2 suites. | **COMPLETED & VERIFIED** |
