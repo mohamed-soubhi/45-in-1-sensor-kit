@@ -47,9 +47,9 @@ The hub `index.html` is in sync with the sources: re-running `sync_hub.py` on a 
 ## 2. New findings
 
 ### N1 🔴 L2-P4 doesn't compile: Arduino's generated prototype comes before `struct RTCDateTime`
-`Complicated_Projects_Level_2_ESP32_S3/Project_04_.../Project_04_...AntiSpoof.ino:155-159`
+`Complicated_Projects_Level_2_ESP32_S3/Project_04_.../Project_04_...AntiSpoof.ino:88, 114, 159`
 
-The Arduino builder generates a prototype for every function and inserts it before the first function definition. Here that's `rtcWriteByte()` at line 87, which comes before `struct RTCDateTime` (line 155). So the generated prototype `RTCDateTime readRTC();` refers to a type that doesn't exist yet. The original `0ab6ffc` version fails in the same way at line 118. **The vault project has never built.** The first review's C1/H5 fixes and the remediation's M7 fix are therefore untested on hardware.
+The Arduino builder generates a prototype for every function and inserts it before the first function definition. Here that's `rtcWriteByte()` at line 88, which comes before `struct RTCDateTime` (line 114). So the generated prototype `RTCDateTime readRTC();` refers to a type that doesn't exist yet. The original `0ab6ffc` version fails in the same way at line 118. **The vault project has never built.** The first review's C1/H5 fixes and the remediation's M7 fix are therefore untested on hardware.
 **Fix:** move `struct RTCDateTime { … };` up to the global-state section (next to `struct BiometricResult`). Add `esp32:esp32:esp32s3` to CI so this can't come back (N6).
 
 ### N2 🟠 Untracking `docs/build/` broke 138 links in a fresh clone
