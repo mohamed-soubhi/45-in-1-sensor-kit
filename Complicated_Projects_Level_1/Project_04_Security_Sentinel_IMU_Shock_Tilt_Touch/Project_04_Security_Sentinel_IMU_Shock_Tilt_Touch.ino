@@ -8,27 +8,23 @@
  *  - Module #40: GY-521 (MPU-6050 I2C: A4 SDA, A5 SCL) - 6-DOF Accelerometer & Gyroscope
  *  - Module #16: Shock / Vibration Sensor (Digital D2, Interrupt 0) - Impact Detection
  *  - Module #33: Metal Touch Sensor (Digital D3, Interrupt 1) - Unauthorized Contact
- *  - Module #21: Tilt Switch (Digital D4) - Discrete Gravitational Tip Sensor
+ *  - Module #21: Tilt Switch (Digital D4) - Discrete Gravitational Tip Sensor (LOW = Tilted)
  * 
  * Actuators & Indicators:
- *  - Module #01: RGB LED (Pins D9 Red, D10 Green, D11 Blue) - Status Beacon
+ *  - Module #01: RGB LED (Pins D11 Red, D10 Blue, D9 Green) - Status Beacon
  *  - Module #11: Active Buzzer (Digital D8) - Intrusion Siren
  *  - Module #30: 5V Relay Module (Digital D7) - Lock Solenoid / Security Strobe
  * 
  * Sensor Fusion Matrix:
- *  Traditional motion alarms trigger accidentally from wind, slamming doors, or floor footsteps.
- *  This project fuses 4 independent sensing layers:
- *   1. Touch Layer: Detects physical hand contact with metal chassis (Module #33).
- *   2. Mechanical Shock Layer: Captures high-frequency micro-impact pulses (Module #16).
- *   3. Angular Tilt Layer: Detects sustained structural tilt via switch (Module #21).
- *   4. Inertial Vector Layer: Reads 3D acceleration vector |A| = sqrt(Ax^2 + Ay^2 + Az^2)
- *      and angular pitch/roll rates via MPU-6050 I2C registers.
+ *  1. Touch Layer: Physical hand contact with chassis (Module #33).
+ *  2. Mechanical Shock Layer: High-frequency micro-impact pulses (Module #16).
+ *  3. Angular Tilt Layer: Structural tilt via kit switch (Module #21, LOW when tilted).
+ *  4. Inertial Vector Layer: 3D acceleration vector delta via MPU-6050.
  *  
- *  Multi-Threat Evaluation:
- *   - Level 0: ARMED_SECURE (Green LED breathing, Siren silent, Relay locked)
- *   - Level 1: PROXIMITY_TOUCH (Touch triggered only -> Warning Amber LED, soft chirp)
- *   - Level 2: SUSPICIOUS_MOTION (Sustained tilt or low-G wobble -> Red pulse)
- *   - Level 3: INTRUSION_BREACH (Shock impact + Acceleration vector jump -> SIREN + RELAY TRIP)
+ *  Multi-Threat Evaluation with State Latching:
+ *   - SEC_ARMED_NORMAL: Green LED, Siren silent, Relay locked.
+ *   - SEC_TAMPER_WARNING: Amber LED, 150ms chirp, latched for 3s calm before auto-return.
+ *   - SEC_ALARM_CRITICAL: Strobe Red/Blue, Siren pulse, Relay tripped for 8 seconds.
  */
 
 #include <Wire.h>
@@ -36,24 +32,23 @@
 // ======================== PIN ASSIGNMENTS ========================
 const int PIN_SHOCK_SENSOR = 2;    // Shock Sensor DO (Hardware INT0)
 const int PIN_TOUCH_SENSOR = 3;    // Metal Touch DO (Hardware INT1)
-const int PIN_TILT_SWITCH  = 4;    // Tilt Switch (Digital input with pullup)
+const int PIN_TILT_SWITCH  = 4;    // Tilt Switch (Kit #21: LOW = Tilted)
 
 // Actuators
 const int PIN_RELAY_LOCK   = 7;    // 5V Relay (Active LOW)
 const int PIN_ALARM_BUZZER = 8;    // Active Buzzer
-const int PIN_RGB_RED      = 9;    // PWM
-const int PIN_RGB_GREEN    = 10;   // PWM
-const int PIN_RGB_BLUE     = 11;   // PWM
+const int PIN_RGB_RED      = 11;   // PWM
+const int PIN_RGB_BLUE     = 10;   // PWM
+const int PIN_RGB_GREEN    = 9;    // PWM
 
 // MPU-6050 I2C Address
 const int MPU_ADDR = 0x68;
 
 // ======================== SYSTEM STATES ==========================
 enum SecurityState {
-  SEC_DISARMED,        // System disarmed (Blue LED)
   SEC_ARMED_NORMAL,    // Fully armed, monitoring perimeter (Green LED)
   SEC_TAMPER_WARNING,  // Minor touch or vibration (Amber LED, short chirp)
-  SEC_ALARM_CRITICAL   // Violent shock / confirmed tilt breach (Strobe Red + Siren)
+  SEC_ALARM_CRITICAL   // Violent shock / confirmed tilt breach (Strobe Red/Blue + Siren)
 };
 
 SecurityState systemState = SEC_ARMED_NORMAL;
@@ -67,7 +62,6 @@ volatile unsigned long lastTouchInterruptTime = 0;
 
 // Baseline Inertial Reference
 int16_t baseAx = 0, baseAy = 0, baseAz = 0;
-int16_t baseGx = 0, baseGy = 0, baseGz = 0;
 bool mpuAvailable = false;
 
 // Non-blocking Timing
@@ -98,6 +92,13 @@ void isrTouch() {
   }
 }
 
+// Sequenced 16-bit register reader helper
+static inline int16_t readWire16() {
+  uint8_t h = Wire.read();
+  uint8_t l = Wire.read();
+  return ((int16_t)h << 8) | l;
+}
+
 // ======================== MPU-6050 DRIVER ========================
 void initMPU6050() {
   Wire.begin();
@@ -114,13 +115,13 @@ void initMPU6050() {
     long axSum = 0, aySum = 0, azSum = 0;
     for (int i = 0; i < 10; i++) {
       Wire.beginTransmission(MPU_ADDR);
-      Wire.write(0x3B); // Starting from ACCEL_XOUT_H
+      Wire.write(0x3B);
       Wire.endTransmission(false);
       Wire.requestFrom(MPU_ADDR, 6, true);
       if (Wire.available() >= 6) {
-        axSum += (Wire.read() << 8 | Wire.read());
-        aySum += (Wire.read() << 8 | Wire.read());
-        azSum += (Wire.read() << 8 | Wire.read());
+        axSum += readWire16();
+        aySum += readWire16();
+        azSum += readWire16();
       }
       delay(20);
     }
@@ -129,7 +130,7 @@ void initMPU6050() {
     baseAz = azSum / 10;
   } else {
     mpuAvailable = false;
-    Serial.println(F(">> WARNING: MPU-6050 Not Found on I2C bus (A4/A5). Using discrete tilt/shock sensors."));
+    Serial.println(F(">> WARNING: MPU-6050 Not Found on I2C bus (A4/A5). Using discrete sensors."));
   }
 }
 
@@ -144,17 +145,16 @@ float getInertialJerk() {
 
   if (Wire.available() < 6) return 0.0;
 
-  int16_t ax = (Wire.read() << 8 | Wire.read());
-  int16_t ay = (Wire.read() << 8 | Wire.read());
-  int16_t az = (Wire.read() << 8 | Wire.read());
+  int16_t ax = readWire16();
+  int16_t ay = readWire16();
+  int16_t az = readWire16();
 
   // Compute vector magnitude delta normalized to G (16384 LSB = 1g in +/-2g range)
   float dAx = (ax - baseAx) / 16384.0;
   float dAy = (ay - baseAy) / 16384.0;
   float dAz = (az - baseAz) / 16384.0;
 
-  float jerkMagnitude = sqrt(dAx * dAx + dAy * dAy + dAz * dAz);
-  return jerkMagnitude;
+  return sqrt(dAx * dAx + dAy * dAy + dAz * dAz);
 }
 
 // Set RGB LED Color
@@ -206,35 +206,47 @@ void loop() {
   if (currentMillis - lastSensorPollTime >= POLL_INTERVAL) {
     lastSensorPollTime = currentMillis;
 
-    // 1. Read Discrete Tilt Switch (LOW = upright, HIGH = tipped over)
-    bool isTilted = (digitalRead(PIN_TILT_SWITCH) == HIGH);
+    // 1. Read Discrete Tilt Switch (Kit #21: LOW when tilted, HIGH when upright)
+    bool isTilted = (digitalRead(PIN_TILT_SWITCH) == LOW);
 
     // 2. Read IMU Acceleration Jerk
-    float imuJerk = getInertialJerk(); // Magnitude in G's
+    float imuJerk = getInertialJerk();
 
     // 3. Sensor Fusion Threat Matrix
     bool isViolentImpact = shockDetected || (imuJerk > 0.65);
-    bool isSevereTilt     = isTilted || (imuJerk > 0.35);
-    bool isTouchDetected  = touchDetected;
+    bool isSevereTilt    = isTilted || (imuJerk > 0.35);
+    bool isTouchDetected = touchDetected;
 
     // Reset volatile flags after latching
     shockDetected = false;
     touchDetected = false;
 
-    // 4. State Machine Progression
-    if (systemState != SEC_ALARM_CRITICAL) {
+    // 4. State Machine Progression with proper latching
+    if (systemState == SEC_ARMED_NORMAL) {
       if (isViolentImpact || (isSevereTilt && isTouchDetected)) {
-        // Multi-sensor breach confirmed: Critical Alarm!
         systemState = SEC_ALARM_CRITICAL;
         alarmStartTime = currentMillis;
         Serial.println(F(">> [SECURITY BREACH] Confirmed Violent Impact / Forced Tampering!"));
       } else if (isTouchDetected || isSevereTilt) {
-        // Single moderate event -> Warning
         systemState = SEC_TAMPER_WARNING;
         alarmStartTime = currentMillis;
         Serial.println(F(">> [TAMPER WARNING] Surface touch or angular shift detected."));
-      } else {
+      }
+    } else if (systemState == SEC_TAMPER_WARNING) {
+      // While in warning, escalate if impact or combined touch+tilt occurs
+      if (isViolentImpact || (isSevereTilt && isTouchDetected)) {
+        systemState = SEC_ALARM_CRITICAL;
+        alarmStartTime = currentMillis;
+        Serial.println(F(">> [SECURITY BREACH] Tamper escalated to Critical Alarm!"));
+      } else if (currentMillis - alarmStartTime > 3000) {
+        // Auto-return after 3 seconds of calm
         systemState = SEC_ARMED_NORMAL;
+        Serial.println(F(">> Tamper warning cleared. Returning to Armed Normal."));
+      }
+    } else if (systemState == SEC_ALARM_CRITICAL) {
+      if (currentMillis - alarmStartTime > ALARM_HOLD_DURATION) {
+        systemState = SEC_ARMED_NORMAL;
+        Serial.println(F(">> Alarm Timed Out. Re-arming Sentinel..."));
       }
     }
 
@@ -255,7 +267,6 @@ void loop() {
         case SEC_ARMED_NORMAL:   Serial.println(F("ARMED [Secure]")); break;
         case SEC_TAMPER_WARNING: Serial.println(F("WARNING [Tampering Suspected]")); break;
         case SEC_ALARM_CRITICAL: Serial.println(F("CRITICAL INTRUSION BREACH!!")); break;
-        default: break;
       }
     }
   }
@@ -271,21 +282,16 @@ void loop() {
     case SEC_TAMPER_WARNING:
       setRgbColor(255, 140, 0);            // Amber Warning
       digitalWrite(PIN_RELAY_LOCK, HIGH);  // Hold lock
-      // Single chirp
+      // Single 150ms chirp on entry
       if (currentMillis - alarmStartTime < 150) {
         digitalWrite(PIN_ALARM_BUZZER, HIGH);
       } else {
         digitalWrite(PIN_ALARM_BUZZER, LOW);
       }
-      // Auto-return to armed after 3 seconds of calm
-      if (currentMillis - alarmStartTime > 3000) {
-        systemState = SEC_ARMED_NORMAL;
-      }
       break;
 
     case SEC_ALARM_CRITICAL:
-      // Trip Relay to lock down perimeter / activate strobe
-      digitalWrite(PIN_RELAY_LOCK, LOW); // Active
+      digitalWrite(PIN_RELAY_LOCK, LOW); // Active emergency trip
 
       // Pulsing strobe siren
       if (currentMillis - lastBuzzerToggleTime > 100) {
@@ -295,18 +301,9 @@ void loop() {
         if (buzzerToggle) {
           setRgbColor(255, 0, 0); // Strobe Red
         } else {
-          setRgbColor(0, 0, 255); // Strobe Blue (Police effect)
+          setRgbColor(0, 0, 255); // Strobe Blue
         }
       }
-
-      // Hold siren for set duration, then re-arm
-      if (currentMillis - alarmStartTime > ALARM_HOLD_DURATION) {
-        systemState = SEC_ARMED_NORMAL;
-        Serial.println(F(">> Alarm Timed Out. Re-arming Sentinel..."));
-      }
-      break;
-
-    default:
       break;
   }
 }

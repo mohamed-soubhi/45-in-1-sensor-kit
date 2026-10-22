@@ -81,33 +81,40 @@ const char* AP_PASS = "wildfire123";
 WebServer server(80);
 
 // ======================== FAST DHT11 BIT-BANG DRIVER ========================
+static portMUX_TYPE dhtMux = portMUX_INITIALIZER_UNLOCKED;
+
 bool readDHT11(int pin, float &temp, float &hum) {
   byte data[5] = {0, 0, 0, 0, 0};
   pinMode(pin, OUTPUT);
   digitalWrite(pin, LOW);
-  delay(18); // 18ms start pulse
+  delay(18); // 18ms start pulse (non-critical)
   digitalWrite(pin, HIGH);
   delayMicroseconds(30);
   pinMode(pin, INPUT);
 
+  // Critical section for microsecond pulse-width sampling
+  portENTER_CRITICAL(&dhtMux);
+
   unsigned long timeout = micros();
-  while (digitalRead(pin) == HIGH) { if (micros() - timeout > 100) return false; }
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout > 100) { portEXIT_CRITICAL(&dhtMux); return false; } }
   timeout = micros();
-  while (digitalRead(pin) == LOW)  { if (micros() - timeout > 100) return false; }
+  while (digitalRead(pin) == LOW)  { if (micros() - timeout > 100) { portEXIT_CRITICAL(&dhtMux); return false; } }
   timeout = micros();
-  while (digitalRead(pin) == HIGH) { if (micros() - timeout > 100) return false; }
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout > 100) { portEXIT_CRITICAL(&dhtMux); return false; } }
 
   for (int i = 0; i < 40; i++) {
     timeout = micros();
-    while (digitalRead(pin) == LOW) { if (micros() - timeout > 100) return false; }
+    while (digitalRead(pin) == LOW) { if (micros() - timeout > 100) { portEXIT_CRITICAL(&dhtMux); return false; } }
     unsigned long pulseStart = micros();
     timeout = micros();
-    while (digitalRead(pin) == HIGH) { if (micros() - timeout > 100) return false; }
+    while (digitalRead(pin) == HIGH) { if (micros() - timeout > 100) { portEXIT_CRITICAL(&dhtMux); return false; } }
     unsigned long len = micros() - pulseStart;
     int byteIdx = i / 8;
     data[byteIdx] <<= 1;
     if (len > 40) data[byteIdx] |= 1;
   }
+
+  portEXIT_CRITICAL(&dhtMux);
 
   if (data[4] == ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) {
     hum = data[0] + data[1] * 0.1f;
@@ -182,7 +189,11 @@ void TaskEnvironmentalFusion(void *pvParameters) {
     // Read DHT11 every 2 seconds (sensor limit)
     if (now - lastDhtTime >= 2000) {
       lastDhtTime = now;
-      readDHT11(PIN_DHT11_DATA, temp, hum);
+      float newTemp = temp, newHum = hum;
+      if (readDHT11(PIN_DHT11_DATA, newTemp, newHum)) {
+        temp = newTemp;
+        hum = newHum;
+      }
     }
 
     // Read Analog Domain Sensors (ESP32-S3 ADC1: 12-bit, 0-4095)
@@ -193,20 +204,20 @@ void TaskEnvironmentalFusion(void *pvParameters) {
 
     // Normalize flame: 4095 = Dark, < 500 = Intense IR light
     float flameIntensity = constrain(map(4095 - rawFlame, 0, 3500, 0, 100), 0, 100);
-    // Soil moisture: 0% dry, 100% soaked
-    float soilMoisture = constrain(map(rawSoil, 1000, 3500, 0, 100), 0, 100);
-    float soilDryness = 100.0f - soilMoisture;
+    // Soil moisture: Kit #42 reads high ADC when dry (air >= 3000), low when wet/submerged (<= 1000)
+    float soilDryness = constrain(map(rawSoil, 1000, 3500, 0, 100), 0, 100);
+    float soilMoisture = 100.0f - soilDryness;
 
     // ================= LEVEL 2 SENSOR FUSION ENGINE =========================
     // 1. Calculate Fuel Vulnerability Index (FVI):
-    // High Temp (> 32°C) + Low Humidity (< 30%) + Dry Ground (> 70% dry)
+    // High Temp (> 30°C) + Low Humidity (< 35%) + Dry Ground (> 70% dry)
     float tempFactor = sigmoid(temp, 30.0f, 0.25f);       // 0.0 to 1.0
     float drynessFactor = sigmoid(100.0f - hum, 65.0f, 0.15f); // High when RH is low
     float groundFactor = sigmoid(soilDryness, 70.0f, 0.1f);
     float fuelVulnerability = (tempFactor * 0.35f) + (drynessFactor * 0.40f) + (groundFactor * 0.25f);
 
     // 2. Calculate Active Combustion Indicator (ACI):
-    // Optical IR Flame (75%) + Acoustic Wood Crackle (25%)
+    // Optical IR Flame (80%) + Acoustic Wood Crackle (20%)
     float irFactor = sigmoid(flameIntensity, 40.0f, 0.1f);
     float soundFactor = sigmoid((float)rawSound, 1800.0f, 0.005f);
     float activeCombustion = (irFactor * 0.80f) + (soundFactor * 0.20f);
@@ -218,7 +229,7 @@ void TaskEnvironmentalFusion(void *pvParameters) {
 
     // 4. Determine Fire Danger Level
     FireDangerLevel level = DANGER_LOW;
-    if (compositeRisk > 0.75f || flameIntensity > 60.0f) {
+    if (compositeRisk > 0.75f || (flameIntensity > 85.0f && compositeRisk > 0.45f)) {
       level = DANGER_EXTREME;
     } else if (compositeRisk > 0.50f) {
       level = DANGER_HIGH;

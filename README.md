@@ -1,38 +1,73 @@
-# Hosyond 45-in-1 Sensor Kit - Projects & Source Code
+# Hosyond 45-in-1 Sensor Kit - Projects, Code & Multi-Sensor Fusion
 
-Complete clone and extracted project codebase for the [Hosyond 45 In 1 Sensor Kit Documentation](https://45-in-1-sensor-kit.readthedocs.io/en/latest/).
+Complete clone, extracted project codebase, and advanced multi-sensor fusion suites for the [Hosyond 45 In 1 Sensor Kit](https://45-in-1-sensor-kit.readthedocs.io/en/latest/).
 
-## Overview
+## Interactive Web Dashboards & Documentation
 
-This repository contains all 45 sensor projects, Arduino sketches (`.ino`), wiring diagrams, component specifications, and offline documentation.
+- **Master Interactive Hub:** [`index.html`](./index.html) - Browse all 45 modules, preview sketches, connection diagrams, and sensor fusion projects.
+- **Level 1 Uno Sensor Fusion Hub:** [`Complicated_Projects_Level_1/index.html`](./Complicated_Projects_Level_1/index.html)
+- **Level 2 ESP32-S3 FreeRTOS Fusion Hub:** [`Complicated_Projects_Level_2_ESP32_S3/index.html`](./Complicated_Projects_Level_2_ESP32_S3/index.html)
+- **Offline Sphinx ReadTheDocs:** [`docs/build/html/index.html`](./docs/build/html/index.html)
+
+---
 
 ## Directory Layout
 
 ```
 45-in-1-sensor-kit/
-├── Code/                  # All 45 project folders with Arduino sketches & READMEs
+├── index.html                                        # Master Interactive Web Hub
+├── CODE_REVIEW.md                                    # Comprehensive code audit & remediation log
+├── Code/                                             # 45 base sensor module sketches & per-module HTML
 │   ├── 1.Rgb_Led/
-│   ├── 2.Smd_Rgb/
-│   ├── 3.7_Color_Flash/
 │   ├── ...
 │   └── 45.Ultrasonic_Module/
-├── docs/                  # Cloned Sphinx documentation
-│   ├── build/html/        # Pre-built offline HTML website (open index.html)
-│   ├── source/            # Raw .rst source files and diagrams
-│   │   ├── img/connect/   # Breadboard & wiring connection diagrams
-│   │   └── img/phenomenon/# Real module photos & expected outputs
-│   ├── Makefile
-│   └── requirements.txt
-└── README.md              # This project guide and index
+├── Complicated_Projects_Level_1/                     # Arduino Uno Sensor Fusion Projects
+│   ├── Project_01_Hazard_Guardian_Fire_Thermal_Sound/
+│   ├── Project_02_Smart_Plant_Ecosystem_Soil_Water_Light_Temp/
+│   ├── Project_03_Autonomous_Reverse_Safety_Radar_Brake/
+│   └── Project_04_Security_Sentinel_IMU_Shock_Tilt_Touch/
+├── Complicated_Projects_Level_2_ESP32_S3/            # ESP32-S3 Dual-Core FreeRTOS Fusion Projects
+│   ├── Project_01_FreeRTOS_AHRS_Gimbal_Mahony_WiFi/
+│   ├── Project_02_Industrial_PdM_Vibration_Thermal_Acoustic_Fusion/
+│   ├── Project_03_Wildfire_Early_Warning_Bayesian_Mesh_Node/
+│   └── Project_04_Cyber_Physical_Biometric_Vault_AntiSpoof/
+└── docs/                                             # Sphinx source files & build configuration
+    ├── source/
+    │   ├── img/connect/                              # Wiring schematics & breadboard diagrams
+    │   └── img/phenomenon/                           # Sensor hardware reference photos
+    └── requirements.txt                              # Sphinx Python documentation dependencies
 ```
 
-## Offline Documentation
+---
 
-The complete ReadTheDocs website has been built locally.
-To browse the documentation offline with full styling, diagrams, and search, open:
-- [`docs/build/html/index.html`](./docs/build/html/index.html)
+## Multi-Sensor Fusion Project Suites
 
-## Project Catalog
+### ⚡ Level 1: Arduino Uno Fusion Projects (ATmega328P @ 16 MHz)
+Deterministic, non-blocking state machine sensor fusion within 2 KB SRAM:
+1. **Hazard Guardian:** Fuses optical flame (#34), NTC thermistor gradient (#13), and acoustic envelope (#37) to calculate a multi-spectral composite hazard index with hysteresis.
+2. **Smart Plant Ecosystem:** Fuses soil electrical conductivity (#42), ambient lux (#14), and air temperature/humidity (#7) to compute dynamic evapotranspiration water demand.
+3. **Autonomous Reverse Radar:** Fuses ultrasonic TOF distance (#45) with dual obstacle IR beam sensors (#29) to trigger proportional emergency braking.
+4. **Security Sentinel:** Fuses 6-DOF IMU jerk (#40), mechanical vibration (#16), omnidirectional tilt (#21), and capacitive touch (#33) into a multi-tiered security state machine.
+
+### 🚀 Level 2: ESP32-S3 FreeRTOS Fusion Projects (Xtensa LX7 @ 240 MHz)
+High-performance dual-core real-time estimation and telemetry:
+1. **6-DOF Inertial AHRS & Gimbal:** 100 Hz Mahony quaternion attitude filter, 14-bit servo PWM, and live Core 0 Web telemetry.
+2. **Industrial Predictive Maintenance (PdM):** Core 1 500 Hz vibration sampling, double-buffer RMS velocity, statistical kurtosis, and ISO 10816 bearing fault detection.
+3. **Wildfire Early Warning Sentinel:** Dual-domain Bayesian probability tree fusing fuel dryness, ambient vapor pressure deficit, and optical combustion indicators.
+4. **Biometric Anti-Spoofing Vault:** 250 Hz optical PPG pulse liveness filter, DS1302 time-gating, and 3D seismic tamper detection.
+
+---
+
+## Hardware & Electrical Guidelines (3.3V vs. 5V)
+
+- **Arduino Uno:** Operates on 5V logic. All modules connect directly to 5V and Uno digital/analog pins.
+- **ESP32-S3:** Operates on 3.3V logic (ADC maximum input is 3.3V).
+  - **Analog Sensors (#13, #14, #17, #20, #42):** Power from the ESP32-S3 **3.3V rail** (not 5V) to protect the ADC inputs.
+  - **Relay Module (#30):** The kit 5V active-LOW relay requires a logic level shifter or N-channel MOSFET driver when operated with 3.3V GPIO to ensure the relay optocoupler fully releases when the pin is HIGH.
+
+---
+
+## Base Kit Project Catalog (45 Modules)
 
 | # | Project / Sensor | Category | Code Location | Wiring Diagram | Doc |
 |---|---|---|---|---|---|
@@ -46,8 +81,8 @@ To browse the documentation offline with full styling, diagrams, and search, ope
 | 8 | **Double Color Led** | Lighting / LED | [`Code/8.Double_Color_Led`](./Code/8.Double_Color_Led) | [`Diagram`](./docs/source/img/connect/8_bb.png) | [`RST`](./docs/source/8.double_color_led.rst) |
 | 9 | **Mini Double Color Led** | Lighting / LED | [`Code/9.Mini_Double_Color_Led`](./Code/9.Mini_Double_Color_Led) | [`Diagram`](./docs/source/img/connect/9_bb.png) | [`RST`](./docs/source/9.mini_double_color_led.rst) |
 | 10 | **Magical Light Cup** | Sensor | [`Code/10.Light_Cup`](./Code/10.Light_Cup) | [`Diagram`](./docs/source/img/connect/10_bb.png) | [`RST`](./docs/source/10.light_cup.rst) |
-| 11 | **Active Buzzer** | Audio / Sound | [`Code/11.Active Buzzer`](./Code/11.Active Buzzer) | [`Diagram`](./docs/source/img/connect/11_bb.png) | [`RST`](./docs/source/11.active_buzzer.rst) |
-| 12 | **Passtive Buzzer** | Audio / Sound | [`Code/12.Passtive Buzzer`](./Code/12.Passtive Buzzer) | [`Diagram`](./docs/source/img/connect/12_bb.png) | [`RST`](./docs/source/12.passtive_buzzer.rst) |
+| 11 | **Active Buzzer** | Audio / Sound | [`Code/11.Active Buzzer`](./Code/11.Active%20Buzzer) | [`Diagram`](./docs/source/img/connect/11_bb.png) | [`RST`](./docs/source/11.active_buzzer.rst) |
+| 12 | **Passtive Buzzer** | Audio / Sound | [`Code/12.Passtive Buzzer`](./Code/12.Passtive%20Buzzer) | [`Diagram`](./docs/source/img/connect/12_bb.png) | [`RST`](./docs/source/12.passtive_buzzer.rst) |
 | 13 | **Analog Temperature** | Environmental | [`Code/13.Temp`](./Code/13.Temp) | [`Diagram`](./docs/source/img/connect/13_bb.png) | [`RST`](./docs/source/13.analog_temperature.rst) |
 | 14 | **Photoresistor Module** | Optical & Distance | [`Code/14.Photoresistor_Module`](./Code/14.Photoresistor_Module) | [`Diagram`](./docs/source/img/connect/14_bb.png) | [`RST`](./docs/source/14.photoresistor_module.rst) |
 | 15 | **DS18B20_sensor** | Sensor | [`Code/15.18B20Temp`](./Code/15.18B20Temp) | [`Diagram`](./docs/source/img/connect/15_bb.png) | [`RST`](./docs/source/15.ds18b20_sensor.rst) |
@@ -82,16 +117,21 @@ To browse the documentation offline with full styling, diagrams, and search, ope
 | 44 | **SD Card Info** | Modules & Storage | [`Code/44.SD_Card_Info`](./Code/44.SD_Card_Info) | [`Diagram`](./docs/source/img/connect/44_bb.png) | [`RST`](./docs/source/44.sd_card_info.rst) |
 | 45 | **Ultrasonic Module** | Optical & Distance | [`Code/45.Ultrasonic_Module`](./Code/45.Ultrasonic_Module) | [`Diagram`](./docs/source/img/connect/45_bb.png) | [`RST`](./docs/source/45.ultrasonic_module.rst) |
 
-## Getting Started with Arduino
+---
 
-1. Open any project sketch in Arduino IDE (e.g. `Code/1.Rgb_Led/1.Rgb_Led.ino`).
-2. Connect your Arduino board via USB.
-3. Select your Board and Port under `Tools > Board` and `Tools > Port`.
-4. Wire the sensor as shown in the project's connection diagram.
-5. Upload the sketch!
+## Toolchain & Compilation Requirements
 
-### Libraries
-- **DHT11**: Included in `Code/7.DHT11/SimpleDHT.zip`. In Arduino IDE, go to `Sketch > Include Library > Add .ZIP Library...`.
-- **DS18B20**: Requires `OneWire` and `DallasTemperature` libraries from Arduino Library Manager.
-- **DS1302 RTC**: Requires `DS1302` library.
-- **GY-521 (MPU-6050)**: Standard Wire.h (I2C) or `MPU6050` library.
+### 1. Arduino AVR Uno Core (Level 1 & Base Kit)
+- **Core:** `arduino:avr` (version ≥ 1.8.6)
+- **Compiler Command:** `arduino-cli compile -b arduino:avr:uno <sketch_folder>`
+- **Optional Libraries:**
+  - OneWire & DallasTemperature (Module #15)
+  - SimpleDHT (Module #7)
+  - IRremote (Module #6)
+  - RtcDS1302 (Module #43)
+  - SD (Module #44)
+
+### 2. ESP32-S3 Core (Level 2 Fusion Projects)
+- **Core:** `esp32:esp32` (version ≥ 3.0.0 for LEDC 3.x API support)
+- **Target Board:** ESP32-S3 Dev Module (`esp32:esp32:esp32s3`)
+- **Built-in FreeRTOS:** Dual-core preemptive scheduling with high-resolution 14-bit timer PWM.

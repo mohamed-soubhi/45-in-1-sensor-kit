@@ -789,11 +789,15 @@ void handleRoot() {
 }
 
 void handleData() {
+  AttitudeEstimate att;
+  if (xQueuePeek(telemetryQueue, &amp;att, pdMS_TO_TICKS(10)) != pdTRUE) {
+    att = currentAttitude;
+  }
   String json = &quot;{&quot;;
-  json += &quot;\&quot;roll\&quot;:&quot; + String(currentAttitude.roll, 2) + &quot;,&quot;;
-  json += &quot;\&quot;pitch\&quot;:&quot; + String(currentAttitude.pitch, 2) + &quot;,&quot;;
-  json += &quot;\&quot;yaw\&quot;:&quot; + String(currentAttitude.yaw, 2) + &quot;,&quot;;
-  json += &quot;\&quot;impact\&quot;:&quot; + String(currentAttitude.isImpact ? &quot;true&quot; : &quot;false&quot;);
+  json += &quot;\&quot;roll\&quot;:&quot; + String(att.roll, 2) + &quot;,&quot;;
+  json += &quot;\&quot;pitch\&quot;:&quot; + String(att.pitch, 2) + &quot;,&quot;;
+  json += &quot;\&quot;yaw\&quot;:&quot; + String(att.yaw, 2) + &quot;,&quot;;
+  json += &quot;\&quot;impact\&quot;:&quot; + String(att.isImpact ? &quot;true&quot; : &quot;false&quot;);
   json += &quot;}&quot;;
   server.send(200, &quot;application/json&quot;, json);
 }
@@ -815,21 +819,27 @@ void TaskSensorFusion(void *pvParameters) {
     if (dt &lt;= 0.0f || dt &gt; 0.1f) dt = 0.01f;
 
     // 1. Read MPU-6050 Accelerometer &amp; Gyroscope via I2C with Mutex
-    int16_t axRaw, ayRaw, azRaw, gxRaw, gyRaw, gzRaw;
+    int16_t axRaw = 0, ayRaw = 0, azRaw = 16384, gxRaw = 0, gyRaw = 0, gzRaw = 0;
     if (xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
       Wire.beginTransmission(MPU_ADDR);
       Wire.write(0x3B);
       Wire.endTransmission(false);
-      Wire.requestFrom(MPU_ADDR, 14, true);
+      Wire.requestFrom((uint8_t)MPU_ADDR, (size_t)14, true);
 
       if (Wire.available() &gt;= 14) {
-        axRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
-        ayRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
-        azRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
+        uint8_t axh = Wire.read(); uint8_t axl = Wire.read();
+        uint8_t ayh = Wire.read(); uint8_t ayl = Wire.read();
+        uint8_t azh = Wire.read(); uint8_t azl = Wire.read();
         Wire.read(); Wire.read(); // Skip temperature
-        gxRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
-        gyRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
-        gzRaw = (Wire.read() &lt;&lt; 8 | Wire.read());
+        uint8_t gxh = Wire.read(); uint8_t gxl = Wire.read();
+        uint8_t gyh = Wire.read(); uint8_t gyl = Wire.read();
+        uint8_t gzh = Wire.read(); uint8_t gzl = Wire.read();
+        axRaw = (int16_t)((axh &lt;&lt; 8) | axl);
+        ayRaw = (int16_t)((ayh &lt;&lt; 8) | ayl);
+        azRaw = (int16_t)((azh &lt;&lt; 8) | azl);
+        gxRaw = (int16_t)((gxh &lt;&lt; 8) | gxl);
+        gyRaw = (int16_t)((gyh &lt;&lt; 8) | gyl);
+        gzRaw = (int16_t)((gzh &lt;&lt; 8) | gzl);
       }
       xSemaphoreGive(i2cMutex);
     }
@@ -857,6 +867,24 @@ void TaskSensorFusion(void *pvParameters) {
     float panOffset = map(joyX, 0, 4095, -30, 30);
     float tiltOffset = map(joyY, 0, 4095, -30, 30);
 
+    // Rotary Encoder manual roll trim
+    static int lastEncClk = HIGH;
+    int encClk = digitalRead(PIN_ENC_CLK);
+    if (encClk != lastEncClk &amp;&amp; encClk == LOW) {
+      if (digitalRead(PIN_ENC_DT) != encClk) {
+        rollTrimOffset += 0.5f;
+      } else {
+        rollTrimOffset -= 0.5f;
+      }
+    }
+    lastEncClk = encClk;
+
+    // Joystick or Encoder switch resets manual trim
+    if (digitalRead(PIN_JOY_SW) == LOW || digitalRead(PIN_ENC_SW) == LOW) {
+      rollTrimOffset = 0.0f;
+      pitchTrimOffset = 0.0f;
+    }
+
     // Update Global Attitude
     currentAttitude.roll = roll + rollTrimOffset;
     currentAttitude.pitch = pitch + pitchTrimOffset + tiltOffset;
@@ -869,21 +897,29 @@ void TaskSensorFusion(void *pvParameters) {
 
     // 4. Actuator Gimbal PWM Output
     if (!emergencyBrake) {
-      // Map Roll (-45 to +45 deg) to Servo PWM Pulse (1ms to 2ms)
-      int rollPwm = constrain(map((int)currentAttitude.roll, -45, 45, 1000, 2000), 1000, 2000);
-      int pitchPwm = constrain(map((int)currentAttitude.pitch, -45, 45, 1000, 2000), 1000, 2000);
-      ledcWrite(3, rollPwm);
-      ledcWrite(4, pitchPwm);
+      // Map Roll/Pitch (-45 to +45 deg) to Servo PWM Pulse (1000us to 2000us)
+      int rollUs = constrain(map((int)currentAttitude.roll, -45, 45, 1000, 2000), 1000, 2000);
+      int pitchUs = constrain(map((int)currentAttitude.pitch, -45, 45, 1000, 2000), 1000, 2000);
+      // Convert pulse us to 14-bit duty (50 Hz period = 20000 us, max duty = 16383)
+      uint32_t rollDuty = (uint32_t)rollUs * 16383UL / 20000UL;
+      uint32_t pitchDuty = (uint32_t)pitchUs * 16383UL / 20000UL;
+      ledcWrite(PIN_GIMBAL_ROLL, rollDuty);
+      ledcWrite(PIN_GIMBAL_PITCH, pitchDuty);
       // Status RGB: Smooth Cyan (Stabilizing active)
-      ledcWrite(0, 0);   // Red
-      ledcWrite(1, 180); // Green
-      ledcWrite(2, 255); // Blue
+      ledcWrite(PIN_RGB_RED, 0);
+      ledcWrite(PIN_RGB_GREEN, 180);
+      ledcWrite(PIN_RGB_BLUE, 255);
+      digitalWrite(PIN_BUZZER, LOW);
     } else {
-      // Impact emergency override: lock actuators &amp; pulse Red
-      ledcWrite(0, 255); // Red
-      ledcWrite(1, 0);
-      ledcWrite(2, 0);
-      if (millis() - lastShockTime &gt; 3000) emergencyBrake = false; // Auto-resume after 3s
+      // Impact emergency override: lock actuators, buzz &amp; pulse Red
+      ledcWrite(PIN_RGB_RED, 255);
+      ledcWrite(PIN_RGB_GREEN, 0);
+      ledcWrite(PIN_RGB_BLUE, 0);
+      digitalWrite(PIN_BUZZER, (millis() / 200) % 2 ? HIGH : LOW);
+      if (millis() - lastShockTime &gt; 3000) {
+        emergencyBrake = false; // Auto-resume after 3s
+        digitalWrite(PIN_BUZZER, LOW);
+      }
     }
 
     // Push to Queue for Core 0
@@ -906,7 +942,8 @@ void setup() {
   Serial.begin(115200);
   while (!Serial &amp;&amp; millis() &lt; 3000);
 
-  Serial.println(F(&quot;\n============================================================&quot;));
+  Serial.println(F(&quot;
+============================================================&quot;));
   Serial.println(F(&quot;  PROJECT 1: ESP32-S3 FREERTOS 6-DOF MAHONY AHRS GIMBAL&quot;));
   Serial.println(F(&quot;============================================================&quot;));
 
@@ -920,16 +957,24 @@ void setup() {
   Wire.write(0);
   Wire.endTransmission();
 
-  // 2. Hardware Interrupt for Shock Sensor
+  // 2. Hardware Interrupt for Shock Sensor &amp; Input Peripherals
   pinMode(PIN_SHOCK, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(PIN_SHOCK), isrShockImpact, FALLING);
+  pinMode(PIN_ENC_CLK, INPUT_PULLUP);
+  pinMode(PIN_ENC_DT, INPUT_PULLUP);
+  pinMode(PIN_ENC_SW, INPUT_PULLUP);
+  pinMode(PIN_JOY_SW, INPUT_PULLUP);
+  pinMode(PIN_BUZZER, OUTPUT);
+  digitalWrite(PIN_BUZZER, HIGH);
+  delay(60);
+  digitalWrite(PIN_BUZZER, LOW);
 
   // 3. Configure High-Resolution LEDC PWM Channels
   ledcAttach(PIN_RGB_RED, 5000, 8);   // 5 kHz, 8-bit resolution
   ledcAttach(PIN_RGB_GREEN, 5000, 8);
   ledcAttach(PIN_RGB_BLUE, 5000, 8);
-  ledcAttach(PIN_GIMBAL_ROLL, 50, 16);  // 50 Hz Servo standard, 16-bit
-  ledcAttach(PIN_GIMBAL_PITCH, 50, 16);
+  ledcAttach(PIN_GIMBAL_ROLL, 50, 14);  // 50 Hz Servo standard, 14-bit
+  ledcAttach(PIN_GIMBAL_PITCH, 50, 14);
 
   // 4. Initialize Wi-Fi Access Point &amp; Web Server
   WiFi.softAP(AP_SSID, AP_PASS);
@@ -965,7 +1010,8 @@ void setup() {
     0  // Dedicated to Core 0
   );
 
-  Serial.println(F(&quot;Dual-Core FreeRTOS scheduling active. System Online!\n&quot;));
+  Serial.println(F(&quot;Dual-Core FreeRTOS scheduling active. System Online!
+&quot;));
 }
 
 void loop() {
@@ -1078,9 +1124,11 @@ enum MachineHealthZone {
 
 // Double-Buffer Vibration Storage (500 Hz Sampling)
 const int SAMPLE_WINDOW = 128;
-float accelBufferX[SAMPLE_WINDOW];
-float accelBufferY[SAMPLE_WINDOW];
-float accelBufferZ[SAMPLE_WINDOW];
+float accelBufferX[2][SAMPLE_WINDOW];
+float accelBufferY[2][SAMPLE_WINDOW];
+float accelBufferZ[2][SAMPLE_WINDOW];
+volatile int writeBuf = 0;
+volatile int readBuf = 1;
 volatile int bufferIndex = 0;
 volatile bool bufferReady = false;
 
@@ -1111,9 +1159,19 @@ void IRAM_ATTR isrTachometer() {
 // ======================== HELPER FUNCTIONS ==================================
 float readBearingTempC() {
   int raw = analogRead(PIN_TEMP_ANALOG);
-  // Linear scaling for LM35 or calibrated NTC (0-3.3V)
-  float voltage = (raw / 4095.0f) * 3.3f;
-  return voltage * 100.0f; // 10 mV / °C (LM35 equivalent)
+  if (raw &lt;= 10) return -20.0f;
+  if (raw &gt;= 4085) return 120.0f;
+  // Kit module #13: 10k pullup resistor and 10k NTC thermistor to ground
+  // Formula: R_ntc = 10k / ((4095 / raw) - 1.0)
+  float rTherm = 10000.0f / ((4095.0f / (float)raw) - 1.0f);
+  // Steinhart-Hart / Beta equation (B = 3950, R0 = 10k at 25°C = 298.15K)
+  float steinhart = rTherm / 10000.0f;          // (R/Ro)
+  steinhart = log(steinhart);                   // ln(R/Ro)
+  steinhart /= 3950.0f;                         // 1/B * ln(R/Ro)
+  steinhart += 1.0f / (25.0f + 273.15f);        // + (1/To)
+  steinhart = 1.0f / steinhart;                 // Invert to Kelvin
+  float tempC = steinhart - 273.15f;            // Convert to Celsius
+  return tempC;
 }
 
 // Set RGB LED Color
@@ -1137,21 +1195,26 @@ void TaskVibrationSampler(void *pvParameters) {
     Wire.beginTransmission(MPU_ADDR);
     Wire.write(0x3B);
     Wire.endTransmission(false);
-    Wire.requestFrom(MPU_ADDR, 6, true);
+    Wire.requestFrom((uint8_t)MPU_ADDR, (size_t)6, true);
 
     if (Wire.available() &gt;= 6) {
-      int16_t ax = (Wire.read() &lt;&lt; 8 | Wire.read());
-      int16_t ay = (Wire.read() &lt;&lt; 8 | Wire.read());
-      int16_t az = (Wire.read() &lt;&lt; 8 | Wire.read());
+      uint8_t axh = Wire.read(); uint8_t axl = Wire.read();
+      uint8_t ayh = Wire.read(); uint8_t ayl = Wire.read();
+      uint8_t azh = Wire.read(); uint8_t azl = Wire.read();
+      int16_t ax = (int16_t)((axh &lt;&lt; 8) | axl);
+      int16_t ay = (int16_t)((ayh &lt;&lt; 8) | ayl);
+      int16_t az = (int16_t)((azh &lt;&lt; 8) | azl);
 
-      // Convert to g&#x27;s (16384 LSB/g)
-      accelBufferX[bufferIndex] = ax / 16384.0f;
-      accelBufferY[bufferIndex] = ay / 16384.0f;
-      accelBufferZ[bufferIndex] = az / 16384.0f;
+      // Convert to g&#x27;s (16384 LSB/g) into active write buffer
+      accelBufferX[writeBuf][bufferIndex] = ax / 16384.0f;
+      accelBufferY[writeBuf][bufferIndex] = ay / 16384.0f;
+      accelBufferZ[writeBuf][bufferIndex] = az / 16384.0f;
 
       bufferIndex++;
       if (bufferIndex &gt;= SAMPLE_WINDOW) {
         bufferIndex = 0;
+        readBuf = writeBuf;
+        writeBuf = 1 - writeBuf;
         bufferReady = true;
       }
     }
@@ -1173,31 +1236,34 @@ void TaskDiagnostics(void *pvParameters) {
     // 1. Process Vibration Window if Ready
     if (bufferReady) {
       bufferReady = false;
+      int curRead = readBuf;
 
       float sumSquares = 0.0f;
       float peakVal = 0.0f;
       float sumFourthPower = 0.0f;
       float mean = 0.0f;
 
-      // Calculate Total Dynamic Acceleration Magnitude: |a| - 1g (remove gravity)
+      // Calculate Total Dynamic Acceleration Magnitude: |a| - 1g (remove static gravity)
       for (int i = 0; i &lt; SAMPLE_WINDOW; i++) {
-        float ax = accelBufferX[i];
-        float ay = accelBufferY[i];
-        float az = accelBufferZ[i];
+        float ax = accelBufferX[curRead][i];
+        float ay = accelBufferY[curRead][i];
+        float az = accelBufferZ[curRead][i];
         float mag = sqrt(ax * ax + ay * ay + az * az) - 1.0f;
         mean += mag;
       }
       mean /= SAMPLE_WINDOW;
 
       for (int i = 0; i &lt; SAMPLE_WINDOW; i++) {
-        float ax = accelBufferX[i];
-        float ay = accelBufferY[i];
-        float az = accelBufferZ[i];
-        float mag = abs(sqrt(ax * ax + ay * ay + az * az) - 1.0f);
+        float ax = accelBufferX[curRead][i];
+        float ay = accelBufferY[curRead][i];
+        float az = accelBufferZ[curRead][i];
+        float mag = sqrt(ax * ax + ay * ay + az * az) - 1.0f; // signed dynamic acceleration
 
-        sumSquares += (mag - mean) * (mag - mean);
-        sumFourthPower += pow(mag - mean, 4);
-        if (mag &gt; peakVal) peakVal = mag;
+        float diff = mag - mean;
+        sumSquares += diff * diff;
+        sumFourthPower += diff * diff * diff * diff;
+        float absMag = abs(mag);
+        if (absMag &gt; peakVal) peakVal = absMag;
       }
 
       float variance = sumSquares / SAMPLE_WINDOW;
@@ -1322,7 +1388,8 @@ void setup() {
   Serial.begin(115200);
   while (!Serial &amp;&amp; millis() &lt; 3000);
 
-  Serial.println(F(&quot;\n============================================================&quot;));
+  Serial.println(F(&quot;
+============================================================&quot;));
   Serial.println(F(&quot;  PROJECT 2: ESP32-S3 PREDICTIVE MAINTENANCE (PdM) SENTINEL&quot;));
   Serial.println(F(&quot;============================================================&quot;));
 
@@ -1370,7 +1437,8 @@ void setup() {
     0
   );
 
-  Serial.println(F(&quot;Industrial PdM Monitor Online. ISO 10816 standards active.\n&quot;));
+  Serial.println(F(&quot;Industrial PdM Monitor Online. ISO 10816 standards active.
+&quot;));
 }
 
 void loop() {
@@ -1494,33 +1562,40 @@ const char* AP_PASS = &quot;wildfire123&quot;;
 WebServer server(80);
 
 // ======================== FAST DHT11 BIT-BANG DRIVER ========================
+static portMUX_TYPE dhtMux = portMUX_INITIALIZER_UNLOCKED;
+
 bool readDHT11(int pin, float &amp;temp, float &amp;hum) {
   byte data[5] = {0, 0, 0, 0, 0};
   pinMode(pin, OUTPUT);
   digitalWrite(pin, LOW);
-  delay(18); // 18ms start pulse
+  delay(18); // 18ms start pulse (non-critical)
   digitalWrite(pin, HIGH);
   delayMicroseconds(30);
   pinMode(pin, INPUT);
 
+  // Critical section for microsecond pulse-width sampling
+  portENTER_CRITICAL(&amp;dhtMux);
+
   unsigned long timeout = micros();
-  while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) return false; }
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) { portEXIT_CRITICAL(&amp;dhtMux); return false; } }
   timeout = micros();
-  while (digitalRead(pin) == LOW)  { if (micros() - timeout &gt; 100) return false; }
+  while (digitalRead(pin) == LOW)  { if (micros() - timeout &gt; 100) { portEXIT_CRITICAL(&amp;dhtMux); return false; } }
   timeout = micros();
-  while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) return false; }
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) { portEXIT_CRITICAL(&amp;dhtMux); return false; } }
 
   for (int i = 0; i &lt; 40; i++) {
     timeout = micros();
-    while (digitalRead(pin) == LOW) { if (micros() - timeout &gt; 100) return false; }
+    while (digitalRead(pin) == LOW) { if (micros() - timeout &gt; 100) { portEXIT_CRITICAL(&amp;dhtMux); return false; } }
     unsigned long pulseStart = micros();
     timeout = micros();
-    while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) return false; }
+    while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) { portEXIT_CRITICAL(&amp;dhtMux); return false; } }
     unsigned long len = micros() - pulseStart;
     int byteIdx = i / 8;
     data[byteIdx] &lt;&lt;= 1;
     if (len &gt; 40) data[byteIdx] |= 1;
   }
+
+  portEXIT_CRITICAL(&amp;dhtMux);
 
   if (data[4] == ((data[0] + data[1] + data[2] + data[3]) &amp; 0xFF)) {
     hum = data[0] + data[1] * 0.1f;
@@ -1595,7 +1670,11 @@ void TaskEnvironmentalFusion(void *pvParameters) {
     // Read DHT11 every 2 seconds (sensor limit)
     if (now - lastDhtTime &gt;= 2000) {
       lastDhtTime = now;
-      readDHT11(PIN_DHT11_DATA, temp, hum);
+      float newTemp = temp, newHum = hum;
+      if (readDHT11(PIN_DHT11_DATA, newTemp, newHum)) {
+        temp = newTemp;
+        hum = newHum;
+      }
     }
 
     // Read Analog Domain Sensors (ESP32-S3 ADC1: 12-bit, 0-4095)
@@ -1606,20 +1685,20 @@ void TaskEnvironmentalFusion(void *pvParameters) {
 
     // Normalize flame: 4095 = Dark, &lt; 500 = Intense IR light
     float flameIntensity = constrain(map(4095 - rawFlame, 0, 3500, 0, 100), 0, 100);
-    // Soil moisture: 0% dry, 100% soaked
-    float soilMoisture = constrain(map(rawSoil, 1000, 3500, 0, 100), 0, 100);
-    float soilDryness = 100.0f - soilMoisture;
+    // Soil moisture: Kit #42 reads high ADC when dry (air &gt;= 3000), low when wet/submerged (&lt;= 1000)
+    float soilDryness = constrain(map(rawSoil, 1000, 3500, 0, 100), 0, 100);
+    float soilMoisture = 100.0f - soilDryness;
 
     // ================= LEVEL 2 SENSOR FUSION ENGINE =========================
     // 1. Calculate Fuel Vulnerability Index (FVI):
-    // High Temp (&gt; 32°C) + Low Humidity (&lt; 30%) + Dry Ground (&gt; 70% dry)
+    // High Temp (&gt; 30°C) + Low Humidity (&lt; 35%) + Dry Ground (&gt; 70% dry)
     float tempFactor = sigmoid(temp, 30.0f, 0.25f);       // 0.0 to 1.0
     float drynessFactor = sigmoid(100.0f - hum, 65.0f, 0.15f); // High when RH is low
     float groundFactor = sigmoid(soilDryness, 70.0f, 0.1f);
     float fuelVulnerability = (tempFactor * 0.35f) + (drynessFactor * 0.40f) + (groundFactor * 0.25f);
 
     // 2. Calculate Active Combustion Indicator (ACI):
-    // Optical IR Flame (75%) + Acoustic Wood Crackle (25%)
+    // Optical IR Flame (80%) + Acoustic Wood Crackle (20%)
     float irFactor = sigmoid(flameIntensity, 40.0f, 0.1f);
     float soundFactor = sigmoid((float)rawSound, 1800.0f, 0.005f);
     float activeCombustion = (irFactor * 0.80f) + (soundFactor * 0.20f);
@@ -1631,7 +1710,7 @@ void TaskEnvironmentalFusion(void *pvParameters) {
 
     // 4. Determine Fire Danger Level
     FireDangerLevel level = DANGER_LOW;
-    if (compositeRisk &gt; 0.75f || flameIntensity &gt; 60.0f) {
+    if (compositeRisk &gt; 0.75f || (flameIntensity &gt; 85.0f &amp;&amp; compositeRisk &gt; 0.45f)) {
       level = DANGER_EXTREME;
     } else if (compositeRisk &gt; 0.50f) {
       level = DANGER_HIGH;
@@ -1694,7 +1773,8 @@ void setup() {
   Serial.begin(115200);
   while (!Serial &amp;&amp; millis() &lt; 3000);
 
-  Serial.println(F(&quot;\n============================================================&quot;));
+  Serial.println(F(&quot;
+============================================================&quot;));
   Serial.println(F(&quot;  PROJECT 3: ESP32-S3 WILDFIRE EARLY-WARNING BAYESIAN NODE&quot;));
   Serial.println(F(&quot;============================================================&quot;));
 
@@ -1739,7 +1819,8 @@ void setup() {
     0
   );
 
-  Serial.println(F(&quot;Bayesian Environmental Node Active.\n&quot;));
+  Serial.println(F(&quot;Bayesian Environmental Node Active.
+&quot;));
 }
 
 void loop() {
@@ -1897,8 +1978,49 @@ struct RTCDateTime {
   byte second, minute, hour, day, month, year;
 };
 
+void rtcInit() {
+  // Clear write protect
+  digitalWrite(PIN_RTC_RST, HIGH);
+  delayMicroseconds(4);
+  rtcWriteByte(0x8E); // Write Protect register
+  rtcWriteByte(0x00); // WP = 0 (disable protection)
+  digitalWrite(PIN_RTC_RST, LOW);
+  delayMicroseconds(4);
+
+  // Read Seconds register (0x81) to check Clock-Halt bit (bit 7)
+  digitalWrite(PIN_RTC_RST, HIGH);
+  delayMicroseconds(4);
+  rtcWriteByte(0x81);
+  byte secReg = rtcReadByte();
+  digitalWrite(PIN_RTC_RST, LOW);
+  delayMicroseconds(4);
+
+  if (secReg &amp; 0x80) { // CH = 1: clock is halted
+    // Start clock and initialize default operational time: 10:30:00
+    digitalWrite(PIN_RTC_RST, HIGH);
+    delayMicroseconds(4);
+    rtcWriteByte(0x80); // Seconds write
+    rtcWriteByte(0x00); // CH = 0, sec = 0
+    digitalWrite(PIN_RTC_RST, LOW);
+    delayMicroseconds(4);
+
+    digitalWrite(PIN_RTC_RST, HIGH);
+    delayMicroseconds(4);
+    rtcWriteByte(0x82); // Minutes write
+    rtcWriteByte(0x30); // 30 min BCD
+    digitalWrite(PIN_RTC_RST, LOW);
+    delayMicroseconds(4);
+
+    digitalWrite(PIN_RTC_RST, HIGH);
+    delayMicroseconds(4);
+    rtcWriteByte(0x84); // Hours write (24h mode)
+    rtcWriteByte(0x10); // 10 AM BCD
+    digitalWrite(PIN_RTC_RST, LOW);
+  }
+}
+
 RTCDateTime readRTC() {
-  RTCDateTime dt = {0, 30, 10, 22, 10, 26}; // Default 10:30 AM
+  RTCDateTime dt = {0, 30, 10, 22, 10, 26}; // Default valid 10:30 AM fallback
   digitalWrite(PIN_RTC_RST, HIGH);
   delayMicroseconds(4);
   rtcWriteByte(0xBF); // Clock burst read
@@ -1911,9 +2033,11 @@ RTCDateTime readRTC() {
   byte yr   = rtcReadByte();
   digitalWrite(PIN_RTC_RST, LOW);
 
-  dt.second = (sec &amp; 0x0F) + ((sec &gt;&gt; 4) &amp; 0x07) * 10;
-  dt.minute = (min &amp; 0x0F) + ((min &gt;&gt; 4) &amp; 0x07) * 10;
-  dt.hour   = (hr &amp; 0x0F) + ((hr &gt;&gt; 4) &amp; 0x03) * 10;
+  if (sec != 0xFF &amp;&amp; min != 0xFF &amp;&amp; hr != 0xFF &amp;&amp; (sec != 0 || min != 0 || hr != 0)) {
+    dt.second = (sec &amp; 0x0F) + ((sec &gt;&gt; 4) &amp; 0x07) * 10;
+    dt.minute = (min &amp; 0x0F) + ((min &gt;&gt; 4) &amp; 0x07) * 10;
+    dt.hour   = (hr &amp; 0x0F) + ((hr &gt;&gt; 4) &amp; 0x03) * 10;
+  }
   return dt;
 }
 
@@ -1987,6 +2111,10 @@ void TaskBiometricPulse(void *pvParameters) {
             peakCount = 0;
             ibiSum = 0.0f;
           }
+        } else {
+          // Invalid interval resets consecutive beat sequence
+          peakCount = 0;
+          ibiSum = 0.0f;
         }
       } else if (dynamicPulse &lt; 0.0f) {
         isPeak = false;
@@ -2015,7 +2143,8 @@ void TaskSecurityController(void *pvParameters) {
 
     // 1. Read Physical Tamper Domain
     bool touchActive = (digitalRead(PIN_TOUCH_DIGITAL) == HIGH);
-    bool tiltActive  = (digitalRead(PIN_TILT_DIGITAL) == HIGH);
+    // Kit module #21 reads LOW when tilted, HIGH when upright
+    bool tiltActive  = (digitalRead(PIN_TILT_DIGITAL) == LOW);
 
     // Read MPU-6050 3D seismic jerk
     float accelJerk = 0.0f;
@@ -2023,11 +2152,14 @@ void TaskSecurityController(void *pvParameters) {
       Wire.beginTransmission(MPU_ADDR);
       Wire.write(0x3B);
       Wire.endTransmission(false);
-      Wire.requestFrom(MPU_ADDR, 6, true);
+      Wire.requestFrom((uint8_t)MPU_ADDR, (size_t)6, true);
       if (Wire.available() &gt;= 6) {
-        int16_t ax = (Wire.read() &lt;&lt; 8 | Wire.read());
-        int16_t ay = (Wire.read() &lt;&lt; 8 | Wire.read());
-        int16_t az = (Wire.read() &lt;&lt; 8 | Wire.read());
+        uint8_t axh = Wire.read(); uint8_t axl = Wire.read();
+        uint8_t ayh = Wire.read(); uint8_t ayl = Wire.read();
+        uint8_t azh = Wire.read(); uint8_t azl = Wire.read();
+        int16_t ax = (int16_t)((axh &lt;&lt; 8) | axl);
+        int16_t ay = (int16_t)((ayh &lt;&lt; 8) | ayl);
+        int16_t az = (int16_t)((azh &lt;&lt; 8) | azl);
         float dAx = (ax / 16384.0f) - baselineAx;
         float dAy = (ay / 16384.0f) - baselineAy;
         float dAz = (az / 16384.0f) - baselineAz;
@@ -2042,8 +2174,8 @@ void TaskSecurityController(void *pvParameters) {
       Serial.println(F(&quot;&gt;&gt; [CRITICAL SECURITY] Seismic Drill / Inversion Tamper Detected!&quot;));
     }
 
-    // 2. Fetch Biometric Data Thread-Safely
-    BiometricResult bio;
+    // 2. Fetch Biometric Data Thread-Safely (safe default initialization)
+    BiometricResult bio = {0, 0.0f, false, false};
     if (xSemaphoreTake(vaultMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
       bio = currentBio;
       xSemaphoreGive(vaultMutex);
@@ -2100,6 +2232,11 @@ void TaskSecurityController(void *pvParameters) {
         if (now - stateStartTime &gt; 5000) {
           currentVaultState = VAULT_STANDBY;
           digitalWrite(PIN_SOLENOID_RELAY, HIGH); // Re-lock
+          // Unlatch biometric liveness so holding finger doesn&#x27;t re-grant indefinitely
+          if (xSemaphoreTake(vaultMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
+            currentBio.livenessConfirmed = false;
+            xSemaphoreGive(vaultMutex);
+          }
           Serial.println(F(&quot;&gt;&gt; Door Solenoid Locked. Returning to Standby.&quot;));
         }
         break;
@@ -2131,7 +2268,8 @@ void setup() {
   Serial.begin(115200);
   while (!Serial &amp;&amp; millis() &lt; 3000);
 
-  Serial.println(F(&quot;\n============================================================&quot;));
+  Serial.println(F(&quot;
+============================================================&quot;));
   Serial.println(F(&quot;  PROJECT 4: ESP32-S3 BIOMETRIC ANTI-SPOOFING VAULT SYSTEM&quot;));
   Serial.println(F(&quot;============================================================&quot;));
 
@@ -2143,12 +2281,13 @@ void setup() {
   pinMode(PIN_RGB_GREEN, OUTPUT);
   pinMode(PIN_RGB_BLUE, OUTPUT);
 
-  // Configure DS1302 Pins
+  // Configure DS1302 Pins and start oscillator
   pinMode(PIN_RTC_RST, OUTPUT);
   pinMode(PIN_RTC_CLK, OUTPUT);
   pinMode(PIN_RTC_DAT, OUTPUT);
   digitalWrite(PIN_RTC_RST, LOW);
   digitalWrite(PIN_RTC_CLK, LOW);
+  rtcInit();
 
   digitalWrite(PIN_SOLENOID_RELAY, HIGH); // Locked
   setLedColor(0, 0, 255); // Blue Standby
@@ -2160,7 +2299,33 @@ void setup() {
   Wire.write(0);
   if (Wire.endTransmission() == 0) {
     mpuActive = true;
-    Serial.println(F(&quot;MPU-6050 Anti-Tamper Core Initialized.&quot;));
+    Serial.println(F(&quot;MPU-6050 Anti-Tamper Core Initialized. Calibrating baseline...&quot;));
+    // Calibrate resting baseline over 32 samples (C1 fix)
+    float sumAx = 0, sumAy = 0, sumAz = 0;
+    int samples = 0;
+    delay(50);
+    for (int i = 0; i &lt; 32; i++) {
+      Wire.beginTransmission(MPU_ADDR);
+      Wire.write(0x3B);
+      Wire.endTransmission(false);
+      Wire.requestFrom((uint8_t)MPU_ADDR, (size_t)6, true);
+      if (Wire.available() &gt;= 6) {
+        uint8_t axh = Wire.read(); uint8_t axl = Wire.read();
+        uint8_t ayh = Wire.read(); uint8_t ayl = Wire.read();
+        uint8_t azh = Wire.read(); uint8_t azl = Wire.read();
+        sumAx += (int16_t)((axh &lt;&lt; 8) | axl) / 16384.0f;
+        sumAy += (int16_t)((ayh &lt;&lt; 8) | ayl) / 16384.0f;
+        sumAz += (int16_t)((azh &lt;&lt; 8) | azl) / 16384.0f;
+        samples++;
+      }
+      delay(5);
+    }
+    if (samples &gt; 0) {
+      baselineAx = sumAx / samples;
+      baselineAy = sumAy / samples;
+      baselineAz = sumAz / samples;
+    }
+    Serial.println(F(&quot;MPU-6050 baseline calibrated.&quot;));
   }
 
   vaultMutex = xSemaphoreCreateMutex();
@@ -2187,7 +2352,8 @@ void setup() {
     0
   );
 
-  Serial.println(F(&quot;Vault Armed &amp; Ready. Standby for authentication.\n&quot;));
+  Serial.println(F(&quot;Vault Armed &amp; Ready. Standby for authentication.
+&quot;));
 }
 
 void loop() {
@@ -2258,26 +2424,17 @@ This **Sensor Fusion Level 1 Project** combines three distinct physical sensing 
  * 
  * Fused Sensors:
  *  - Module #34: Flame Sensor (Analog AO &amp; Digital DO)
- *  - Module #13: Analog Temperature Sensor (NTC Thermistor / LM35)
+ *  - Module #13: Analog Temperature Sensor (NTC Thermistor / 10k Divider)
  *  - Module #37: High Sensitivity Sound Detection Sensor (Analog AO &amp; Digital DO)
  * 
  * Actuators &amp; Indicators:
- *  - Module #01: RGB LED (PWM pins for smooth color transitions)
+ *  - Module #01: RGB LED (PWM pins matching kit pinout: R=11, B=10, G=9)
  *  - Module #11: Active Buzzer (Pulsed alarm siren)
  *  - Module #30: 5V Relay Module (Emergency exhaust / Power cutoff)
  * 
  * Sensor Fusion Principle:
- *  Traditional single-sensor alarms suffer from false positives and thermal lag:
- *   - Optical IR flame sensors can trigger from direct sunlight or halogen reflections.
- *   - Thermal sensors alone take seconds to minutes to heat up to an absolute limit.
- *   - Acoustic sensors alone trigger on hand claps or ambient noises.
- *  
- *  This sketch implements a Multi-Factor Risk Assessment (Sensor Fusion):
- *   1. Measures raw IR flame radiation intensity (Analog A0).
- *   2. Computes the instantaneous temperature derivative dT/dt (rate of rise) on A1.
- *   3. Analyzes sound pressure spikes on A2 and digital sound pulses on D2.
- *   4. Combines inputs into a dynamic Risk Score (0 - 100%).
- *   5. Executes non-blocking state machine: NORMAL -&gt; ADVISORY -&gt; WARNING -&gt; EMERGENCY.
+ *  Combines optical IR flame radiation, thermal derivative dT/dt, and acoustic
+ *  shockwave detection into a multi-factor risk score with state hysteresis.
  */
 
 // ======================== PIN DEFINITIONS ========================
@@ -2286,14 +2443,14 @@ const int PIN_FLAME_ANALOG = A0;   // Flame Sensor AO (lower value = stronger fl
 const int PIN_FLAME_DIGITAL = 4;   // Flame Sensor DO (active LOW)
 const int PIN_TEMP_ANALOG  = A1;   // Analog Temperature Sensor AO
 const int PIN_SOUND_ANALOG = A2;   // High Sensitivity Sound Sensor AO
-const int PIN_SOUND_DIGITAL = 2;   // Sound Sensor DO (interrupt capable on Uno)
+const int PIN_SOUND_DIGITAL = 2;   // Sound Sensor DO (hardware interrupt INT0)
 
-// Actuators
-const int PIN_RGB_RED      = 9;    // RGB LED Red (PWM)
-const int PIN_RGB_GREEN    = 10;   // RGB LED Green (PWM)
-const int PIN_RGB_BLUE     = 11;   // RGB LED Blue (PWM)
+// Actuators (aligned with kit Project 1 pinout)
+const int PIN_RGB_RED      = 11;   // RGB LED Red (PWM)
+const int PIN_RGB_BLUE     = 10;   // RGB LED Blue (PWM)
+const int PIN_RGB_GREEN    = 9;    // RGB LED Green (PWM)
 const int PIN_BUZZER       = 8;    // Active Buzzer
-const int PIN_RELAY        = 7;    // 5V Relay (Active LOW on most kit relays)
+const int PIN_RELAY        = 7;    // 5V Relay (Active LOW on kit relays)
 
 // ===================== SYSTEM STATES &amp; CONSTANTS =================
 enum SystemState {
@@ -2318,9 +2475,9 @@ unsigned long lastTempSampleTime = 0;
 const unsigned long TEMP_SAMPLE_INTERVAL = 200; // ms
 
 // Risk Weights (Sum = 1.0)
-const float WEIGHT_FLAME = 0.50;  // Optical flame detection weight
+const float WEIGHT_FLAME = 0.50;     // Optical flame detection weight
 const float WEIGHT_TEMP_RATE = 0.35; // Thermal rise rate weight
-const float WEIGHT_SOUND = 0.15;  // Acoustic anomaly weight
+const float WEIGHT_SOUND = 0.15;     // Acoustic anomaly weight
 
 // Sound Event Counter
 volatile unsigned long soundTriggerCount = 0;
@@ -2343,28 +2500,23 @@ void onSoundDetected() {
 }
 
 // ===================== HELPER FUNCTIONS ==========================
-// Convert NTC thermistor ADC reading to degrees Celsius (Steinhart-Hart approximation)
+// Convert NTC thermistor ADC reading to degrees Celsius matching Kit Module #13
+// Kit #13 circuit: 10k fixed resistor to VCC, 10k NTC thermistor to GND
 float readTemperatureC(int pin) {
   int rawADC = analogRead(pin);
   if (rawADC &lt;= 0) rawADC = 1;
   if (rawADC &gt;= 1023) rawADC = 1022;
 
-  // Assuming standard 10k NTC thermistor with 10k pull-up/down
-  float resistance = 10000.0 * (1023.0 / (float)rawADC - 1.0);
-  float steinhart;
-  steinhart = resistance / 10000.0;     // (R/Ro)
-  steinhart = log(steinhart);           // ln(R/Ro)
-  steinhart /= 3950.0;                  // 1/B * ln(R/Ro)
-  steinhart += 1.0 / (25.0 + 273.15);   // + (1/To)
-  steinhart = 1.0 / steinhart;          // Invert
-  steinhart -= 273.15;                  // Convert to Celsius
+  float R1 = 10000.0;
+  float R2 = R1 / ((1023.0 / (float)rawADC) - 1.0);
+  float logR2 = log(R2);
+  
+  // Steinhart-Hart equation with kit #13 calibrated coefficients
+  float c1 = 0.001129148, c2 = 0.000234125, c3 = 0.0000000876741;
+  float T_kelvin = 1.0 / (c1 + c2 * logR2 + c3 * logR2 * logR2 * logR2);
+  float T_celsius = T_kelvin - 273.15;
 
-  // Sanity check
-  if (steinhart &lt; -40.0 || steinhart &gt; 125.0) {
-    // Fallback linear scaling for simple analog temp modules (e.g. KY-013 / LM35)
-    return (rawADC * 5.0 / 1024.0) * 100.0;
-  }
-  return steinhart;
+  return T_celsius;
 }
 
 // Calculate rate of temperature change (deg C per second)
@@ -2377,11 +2529,11 @@ float calculateTemperatureRate(float currentTemp) {
   }
 
   // Calculate delta over buffer
-  int oldestIdx = tempHistoryIdx; // Oldest entry is current write position
+  int oldestIdx = tempHistoryIdx;
   float oldestTemp = tempHistory[oldestIdx];
   float dtSeconds = (TEMP_HISTORY_SIZE * TEMP_SAMPLE_INTERVAL) / 1000.0;
   float rate = (currentTemp - oldestTemp) / dtSeconds;
-  return (rate &gt; 0) ? rate : 0.0; // We only care about positive heating rate
+  return (rate &gt; 0) ? rate : 0.0; // Positive heating rate only
 }
 
 // Set RGB LED Color (Common Cathode: 255=ON, 0=OFF)
@@ -2394,9 +2546,10 @@ void setRgbColor(byte r, byte g, byte b) {
 // ======================== SETUP ==================================
 void setup() {
   Serial.begin(115200);
-  while (!Serial &amp;&amp; millis() &lt; 3000); // Allow USB initialization
+  while (!Serial &amp;&amp; millis() &lt; 3000);
 
-  Serial.println(F(&quot;\n=======================================================&quot;));
+  Serial.println(F(&quot;
+=======================================================&quot;));
   Serial.println(F(&quot;  PROJECT 1: MULTI-SENSOR ENVIRONMENTAL HAZARD GUARDIAN&quot;));
   Serial.println(F(&quot;=======================================================&quot;));
 
@@ -2417,7 +2570,7 @@ void setup() {
   // Attach Hardware Interrupt for high-speed acoustic spike detection
   attachInterrupt(digitalPinToInterrupt(PIN_SOUND_DIGITAL), onSoundDetected, FALLING);
 
-  // Baseline Calibration (sample 10 readings over 500ms)
+  // Baseline Calibration
   Serial.print(F(&quot;Calibrating ambient baselines... &quot;));
   float flameSum = 0;
   float tempSum = 0;
@@ -2438,9 +2591,10 @@ void setup() {
 
   Serial.println(F(&quot;DONE&quot;));
   Serial.print(F(&quot;  -&gt; Ambient Flame Raw ADC: &quot;)); Serial.println(baselineFlame);
-  Serial.print(F(&quot;  -&gt; Ambient Temp:          &quot;)); Serial.print(baselineTemp); Serial.println(F(&quot; °C&quot;));
+  Serial.print(F(&quot;  -&gt; Ambient Temp:          &quot;)); Serial.print(baselineTemp); Serial.println(F(&quot; C&quot;));
   Serial.print(F(&quot;  -&gt; Ambient Sound Raw ADC: &quot;)); Serial.println(baselineSound);
-  Serial.println(F(&quot;Guardian online. Monitoring sensor fusion matrix...\n&quot;));
+  Serial.println(F(&quot;Guardian online. Monitoring sensor fusion matrix...
+&quot;));
 }
 
 // ======================== MAIN LOOP ==============================
@@ -2451,28 +2605,31 @@ void loop() {
   int rawFlame = analogRead(PIN_FLAME_ANALOG);
   bool flameDigitalActive = (digitalRead(PIN_FLAME_DIGITAL) == LOW);
   float currentTemp = readTemperatureC(PIN_TEMP_ANALOG);
-  float tempRate = calculateTemperatureRate(currentTemp); // °C / sec
+  float tempRate = calculateTemperatureRate(currentTemp); // C / sec
   int rawSound = analogRead(PIN_SOUND_ANALOG);
   int soundDeviation = abs(rawSound - (int)baselineSound);
 
+  // Read and reset sound interrupt count safely with interrupts disabled
+  unsigned long soundEvents;
+  noInterrupts();
+  soundEvents = soundTriggerCount;
+  soundTriggerCount = 0;
+  interrupts();
+
   // 2. Individual Risk Sub-scores Normalized (0.0 to 1.0)
-  // Flame: ADC drops when flame is detected (1023 = dark, &lt; 100 = fire close)
   float flameScore = 0.0;
   if (rawFlame &lt; baselineFlame) {
     flameScore = (baselineFlame - (float)rawFlame) / baselineFlame;
     if (flameScore &gt; 1.0) flameScore = 1.0;
   }
-  if (flameDigitalActive &amp;&amp; flameScore &lt; 0.6) flameScore = 0.6; // Digital trigger guarantees min 60%
+  if (flameDigitalActive &amp;&amp; flameScore &lt; 0.6) flameScore = 0.6;
 
-  // Thermal Rise Rate: &gt; 0.5 °C/sec is suspicious, &gt; 2.0 °C/sec is critical
   float tempRateScore = (tempRate &gt; 0) ? (tempRate / 2.0) : 0.0;
   if (tempRateScore &gt; 1.0) tempRateScore = 1.0;
 
-  // Sound Anomaly Score
   float soundScore = (float)soundDeviation / 350.0;
-  if (soundTriggerCount &gt; 0) {
-    soundScore += (soundTriggerCount * 0.2);
-    soundTriggerCount = 0; // Reset after consuming
+  if (soundEvents &gt; 0) {
+    soundScore += (soundEvents * 0.2);
   }
   if (soundScore &gt; 1.0) soundScore = 1.0;
 
@@ -2481,40 +2638,40 @@ void loop() {
                         (tempRateScore * WEIGHT_TEMP_RATE) + 
                         (soundScore * WEIGHT_SOUND);
   
-  // Fast-track Rule: If flame optical signature is extremely strong (&gt;0.85) AND temp is rising, jump to 1.0
   if (flameScore &gt; 0.85 &amp;&amp; tempRate &gt; 0.2) {
     compositeRisk = max(compositeRisk, 0.95);
   }
 
-  // 4. State Machine Evaluation
-  if (compositeRisk &lt; 0.25) {
-    currentState = STATE_NORMAL;
-  } else if (compositeRisk &lt; 0.55) {
-    currentState = STATE_ADVISORY;
-  } else if (compositeRisk &lt; 0.80) {
-    currentState = STATE_WARNING;
-  } else {
-    currentState = STATE_EMERGENCY;
+  // 4. State Machine with Hysteresis (prevents chattering)
+  if (currentState == STATE_EMERGENCY) {
+    if (compositeRisk &lt; 0.65) currentState = STATE_WARNING;
+  } else if (currentState == STATE_WARNING) {
+    if (compositeRisk &gt;= 0.80) currentState = STATE_EMERGENCY;
+    else if (compositeRisk &lt; 0.45) currentState = STATE_ADVISORY;
+  } else if (currentState == STATE_ADVISORY) {
+    if (compositeRisk &gt;= 0.55) currentState = STATE_WARNING;
+    else if (compositeRisk &lt; 0.20) currentState = STATE_NORMAL;
+  } else { // STATE_NORMAL
+    if (compositeRisk &gt;= 0.25) currentState = STATE_ADVISORY;
   }
 
-  // 5. Actuator Management based on State
+  // 5. Actuator Management
   switch (currentState) {
     case STATE_NORMAL:
-      setRgbColor(0, 255, 0);        // Solid Green
+      setRgbColor(0, 255, 0);        // Green
       digitalWrite(PIN_BUZZER, LOW);
-      digitalWrite(PIN_RELAY, HIGH); // Safe: Relay idle
+      digitalWrite(PIN_RELAY, HIGH); // Relay idle (safe)
       break;
 
     case STATE_ADVISORY:
-      setRgbColor(0, 180, 255);      // Cyan / Cool Blue
+      setRgbColor(0, 180, 255);      // Cyan
       digitalWrite(PIN_BUZZER, LOW);
       digitalWrite(PIN_RELAY, HIGH);
       break;
 
     case STATE_WARNING:
-      setRgbColor(255, 140, 0);      // Amber / Orange
-      digitalWrite(PIN_RELAY, HIGH); // Keep monitoring
-      // Intermittent soft beep every 500ms
+      setRgbColor(255, 140, 0);      // Amber
+      digitalWrite(PIN_RELAY, HIGH);
       if (currentMillis - lastBuzzerToggleTime &gt; 500) {
         lastBuzzerToggleTime = currentMillis;
         buzzerState = !buzzerState;
@@ -2523,19 +2680,17 @@ void loop() {
       break;
 
     case STATE_EMERGENCY:
-      // Rapid Flashing Red &amp; Pulsed Loud Siren
       if (currentMillis - lastBuzzerToggleTime &gt; 120) {
         lastBuzzerToggleTime = currentMillis;
         buzzerState = !buzzerState;
         digitalWrite(PIN_BUZZER, buzzerState ? HIGH : LOW);
         if (buzzerState) {
-          setRgbColor(255, 0, 0);    // Bright Red
+          setRgbColor(255, 0, 0);    // Red
         } else {
-          setRgbColor(0, 0, 0);      // Off (Strobe effect)
+          setRgbColor(0, 0, 0);      // Strobe off
         }
       }
-      // Trigger Relay to cut power / engage emergency ventilation
-      digitalWrite(PIN_RELAY, LOW); // Active
+      digitalWrite(PIN_RELAY, LOW); // Active emergency trip
       break;
   }
 
@@ -2631,9 +2786,9 @@ This **Sensor Fusion Level 1 Project** integrates four physical domains:
  * Kit: Hosyond 45-in-1 Sensor Kit
  * 
  * Fused Sensors:
- *  - Module #42: Soil Moisture Sensor (Analog A0)
+ *  - Module #42: Soil Moisture Sensor (Analog A0) [Kit: High ADC = Dry, Low ADC = Wet]
  *  - Module #39: Water Level Sensor (Analog A1) - Reservoir Monitor
- *  - Module #14: Photoresistor LDR Module (Analog A2) - Solar Insolation
+ *  - Module #14: Photoresistor LDR Module (Analog A2) [Inverted: High ADC = Bright Sun]
  *  - Module #07: DHT11 Sensor (Digital D4) - Ambient Temp &amp; Humidity
  * 
  * Actuators &amp; Indicators:
@@ -2642,18 +2797,18 @@ This **Sensor Fusion Level 1 Project** integrates four physical domains:
  *  - Module #12: Passive Buzzer (Digital D8) - Low Reservoir Alert Tones
  * 
  * Sensor Fusion Logic:
- *  1. Evapotranspiration Index: Integrates Soil Dryness with Ambient Temp &amp; Sunlight.
- *  2. Anti-Scorch Interlock: Suspends routine watering under direct intense sunlight (Lux &gt; 80%)
- *     to prevent plant leaf sunburn and wasteful evaporation, unless moisture is critically low.
- *  3. Dry-Run Pump Protection: Prevents relay engagement if water reservoir level is below 15%,
- *     protecting the pump motor from burnout and emitting an audible warning beep.
- *  4. Hysteresis Thresholding: Prevents rapid on/off relay hunting using dual-band logic.
+ *  1. Corrected Polarity: Soil sensor reads dry at high ADC (matching kit #42 reference).
+ *     Photoresistor is inverted so higher value = brighter sun (matching kit #14 reference).
+ *  2. Evapotranspiration Index: Dynamic watering duration modulated by ambient temp/humidity.
+ *  3. Anti-Scorch Interlock: Suspends routine watering under direct intense midday sun (&gt;75%).
+ *  4. Dry-Run Pump Protection: Locks out pump when reservoir is depleted (&lt;15%).
+ *  5. Soil Hysteresis: Stops watering once soil reaches saturation threshold.
  */
 
 // ======================== PIN ASSIGNMENTS ========================
-const int PIN_SOIL_MOISTURE = A0;   // Soil Moisture (0=Dry, 1023=Submerged in water)
+const int PIN_SOIL_MOISTURE = A0;   // Soil Moisture (High = Dry, Low = Wet)
 const int PIN_WATER_LEVEL   = A1;   // Reservoir Level (0=Empty, &gt;500=Full)
-const int PIN_PHOTORESISTOR = A2;   // Ambient Light (0=Dark, 1023=Intense Sun)
+const int PIN_PHOTORESISTOR = A2;   // Ambient Light (Raw is high in dark)
 const int PIN_DHT11_DATA    = 4;    // DHT11 1-wire communication pin
 const int PIN_PUMP_RELAY    = 7;    // 5V Relay (Active LOW)
 const int PIN_BUZZER        = 8;    // Passive Buzzer tone pin
@@ -2661,10 +2816,11 @@ const int PIN_LED_RED       = 9;    // Double Color LED - Red
 const int PIN_LED_GREEN     = 10;   // Double Color LED - Green
 
 // ==================== CALIBRATION &amp; THRESHOLDS ===================
-const int SOIL_DRY_THRESHOLD       = 350;  // Below this ADC = Soil needs water
-const int SOIL_SATURATED_THRESHOLD = 650;  // Above this ADC = Soil is satisfied
-const int RESERVOIR_EMPTY_LIMIT    = 180;  // Below this ADC = Reservoir is dry!
-const int SUNLIGHT_SCORCH_LIMIT    = 750;  // Above this ADC = Peak direct sun
+// Aligned with Kit #42 reference sketch: &gt;= 800 is dry
+const int SOIL_DRY_THRESHOLD       = 750;  // Above this ADC = Dry soil (Needs water)
+const int SOIL_SATURATED_THRESHOLD = 450;  // Below this ADC = Saturated soil (Stop watering)
+const int RESERVOIR_EMPTY_LIMIT    = 180;  // Below this ADC = Reservoir is empty!
+const int SUNLIGHT_SCORCH_LIMIT    = 750;  // Inverted lux above this = Direct midday sun
 
 // ===================== STATE MACHINE =============================
 enum EcosystemState {
@@ -2682,14 +2838,13 @@ unsigned long lastSensorReadTime = 0;
 const unsigned long SENSOR_INTERVAL = 1000; // ms
 
 unsigned long wateringStartTime = 0;
-const unsigned long MAX_WATERING_DURATION = 5000; // 5 seconds max per cycle
-const unsigned long WATERING_COOLDOWN     = 15000; // 15 seconds absorption delay
+unsigned long calculatedWateringDuration = 4000; // Dynamically computed from evapotranspiration
+const unsigned long WATERING_COOLDOWN = 15000;   // 15 seconds absorption delay
 unsigned long lastWateringFinishTime = 0;
 
 unsigned long lastBuzzerChirpTime = 0;
 
 // DHT11 Simplified Non-blocking Driver
-// (Avoids external library dependency while providing reliable readings)
 struct DHTData {
   float temperature;
   float humidity;
@@ -2700,48 +2855,32 @@ DHTData readDHT11(int pin) {
   DHTData result = {25.0, 50.0, false};
   byte data[5] = {0, 0, 0, 0, 0};
 
-  // Bus handshake
   pinMode(pin, OUTPUT);
   digitalWrite(pin, LOW);
-  delay(20); // 18-20ms start pulse
+  delay(20);
   digitalWrite(pin, HIGH);
   delayMicroseconds(30);
   pinMode(pin, INPUT);
 
-  // Wait for DHT response (80us LOW + 80us HIGH)
   unsigned long timeout = micros();
-  while (digitalRead(pin) == HIGH) {
-    if (micros() - timeout &gt; 100) return result;
-  }
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) return result; }
   timeout = micros();
-  while (digitalRead(pin) == LOW) {
-    if (micros() - timeout &gt; 100) return result;
-  }
+  while (digitalRead(pin) == LOW)  { if (micros() - timeout &gt; 100) return result; }
   timeout = micros();
-  while (digitalRead(pin) == HIGH) {
-    if (micros() - timeout &gt; 100) return result;
-  }
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) return result; }
 
-  // Read 40 bits
   for (int i = 0; i &lt; 40; i++) {
     timeout = micros();
-    while (digitalRead(pin) == LOW) {
-      if (micros() - timeout &gt; 100) return result;
-    }
+    while (digitalRead(pin) == LOW) { if (micros() - timeout &gt; 100) return result; }
     unsigned long pulseStart = micros();
     timeout = micros();
-    while (digitalRead(pin) == HIGH) {
-      if (micros() - timeout &gt; 100) return result;
-    }
+    while (digitalRead(pin) == HIGH) { if (micros() - timeout &gt; 100) return result; }
     unsigned long pulseLen = micros() - pulseStart;
     int byteIdx = i / 8;
     data[byteIdx] &lt;&lt;= 1;
-    if (pulseLen &gt; 40) {
-      data[byteIdx] |= 1; // 70us high = bit 1
-    }
+    if (pulseLen &gt; 40) data[byteIdx] |= 1;
   }
 
-  // Checksum verification
   if (data[4] == ((data[0] + data[1] + data[2] + data[3]) &amp; 0xFF)) {
     result.humidity = data[0] + (data[1] * 0.1);
     result.temperature = data[2] + (data[3] * 0.1);
@@ -2750,13 +2889,11 @@ DHTData readDHT11(int pin) {
   return result;
 }
 
-// Set Bi-Color Status LED (Common Cathode)
 void setStatusLed(bool redOn, bool greenOn) {
   digitalWrite(PIN_LED_RED, redOn ? HIGH : LOW);
   digitalWrite(PIN_LED_GREEN, greenOn ? HIGH : LOW);
 }
 
-// Tone generator for Passive Buzzer
 void playAlarmTone(int freq, int durationMs) {
   tone(PIN_BUZZER, freq, durationMs);
 }
@@ -2766,7 +2903,8 @@ void setup() {
   Serial.begin(115200);
   while (!Serial &amp;&amp; millis() &lt; 3000);
 
-  Serial.println(F(&quot;\n=======================================================&quot;));
+  Serial.println(F(&quot;
+=======================================================&quot;));
   Serial.println(F(&quot;  PROJECT 2: SMART PLANT ECOSYSTEM &amp; SENSOR FUSION HUB&quot;));
   Serial.println(F(&quot;=======================================================&quot;));
 
@@ -2780,7 +2918,8 @@ void setup() {
   setStatusLed(false, true);          // Green = OK
   noTone(PIN_BUZZER);
 
-  Serial.println(F(&quot;Sensors Initialized. Beginning Autonomous Irrigation Loop...\n&quot;));
+  Serial.println(F(&quot;Sensors Initialized. Beginning Autonomous Irrigation Loop...
+&quot;));
 }
 
 // ======================== MAIN LOOP ==============================
@@ -2791,43 +2930,51 @@ void loop() {
   if (currentMillis - lastSensorReadTime &gt;= SENSOR_INTERVAL) {
     lastSensorReadTime = currentMillis;
 
-    // 1. Read All Physical Domain Sensors
-    int rawSoilMoisture = analogRead(PIN_SOIL_MOISTURE);
+    // 1. Read Raw Sensors
+    int rawSoilMoisture = analogRead(PIN_SOIL_MOISTURE); // High = Dry, Low = Wet
     int rawWaterLevel   = analogRead(PIN_WATER_LEVEL);
-    int rawSunlight     = analogRead(PIN_PHOTORESISTOR);
-    DHTData dht = readDHT11(PIN_DHT11_DATA);
+    int rawLdr          = analogRead(PIN_PHOTORESISTOR); // Kit #14: High = Dark
+    int rawSunlight     = 1023 - rawLdr;                 // Inverted: High = Bright sun
+    DHTData dht         = readDHT11(PIN_DHT11_DATA);
 
     // Normalize Soil Moisture (0% = Bone Dry, 100% = Saturated)
-    float soilPercent = constrain(map(rawSoilMoisture, 150, 850, 0, 100), 0, 100);
+    float soilPercent = 100.0 - constrain(map(rawSoilMoisture, 350, 850, 0, 100), 0, 100);
     // Normalize Water Reservoir (0% = Dry, 100% = Full)
     float reservoirPercent = constrain(map(rawWaterLevel, 100, 700, 0, 100), 0, 100);
-    // Sunlight Level
+    // Normalize Sunlight
     float sunlightPercent = constrain(map(rawSunlight, 50, 950, 0, 100), 0, 100);
 
     // 2. Sensor Fusion Logic Matrix
     bool isReservoirCritical = (rawWaterLevel &lt; RESERVOIR_EMPTY_LIMIT);
-    bool isSoilDry           = (rawSoilMoisture &lt; SOIL_DRY_THRESHOLD);
-    bool isSoilSaturated     = (rawSoilMoisture &gt;= SOIL_SATURATED_THRESHOLD);
-    bool isIntenseSunlight   = (rawSunlight &gt; SUNLIGHT_SCORCH_LIMIT);
+    bool isSoilDry           = (rawSoilMoisture &gt;= SOIL_DRY_THRESHOLD);
+    bool isSoilSaturated     = (rawSoilMoisture &lt;= SOIL_SATURATED_THRESHOLD);
+    bool isIntenseSunlight   = (rawSunlight &gt;= SUNLIGHT_SCORCH_LIMIT);
 
     // Evapotranspiration Multiplier
-    // High ambient temp (&gt;28C) &amp; Low humidity (&lt;40%) increases water demand
     float waterDemandFactor = 1.0;
     if (dht.valid) {
       if (dht.temperature &gt; 28.0) waterDemandFactor += 0.3;
       if (dht.humidity &lt; 40.0)    waterDemandFactor += 0.2;
     }
+    // Calculate dynamic watering duration (between 2.5s and 6.0s)
+    calculatedWateringDuration = constrain((unsigned long)(3500 * waterDemandFactor), 2500, 6000);
 
     // 3. State Machine Transitions
     if (isReservoirCritical) {
       systemState = ECO_RESERVOIR_LOW;
     } else if (systemState == ECO_WATERING) {
-      // Handled in non-blocking timer below
+      // Check if soil has become saturated early (hysteresis cutoff)
+      if (isSoilSaturated) {
+        digitalWrite(PIN_PUMP_RELAY, HIGH); // Turn pump OFF
+        lastWateringFinishTime = currentMillis;
+        systemState = ECO_OPTIMAL;
+        setStatusLed(false, true);
+        Serial.println(F(&quot;&gt;&gt; [ACTION] Soil Saturated reached. Shutting down pump early.&quot;));
+      }
     } else if (isSoilDry) {
-      // Cooldown check (allow water to absorb into soil)
       if (currentMillis - lastWateringFinishTime &gt; WATERING_COOLDOWN) {
         if (isIntenseSunlight &amp;&amp; soilPercent &gt; 10.0) {
-          // Delay routine watering under scorching sun, unless critically dry (&lt;10%)
+          // Delay routine watering under scorching sun to prevent leaf burns
           systemState = ECO_SUN_SUSPENDED;
         } else {
           systemState = ECO_NEED_WATER;
@@ -2848,27 +2995,25 @@ void loop() {
 
       case ECO_SUN_SUSPENDED:
         digitalWrite(PIN_PUMP_RELAY, HIGH); // Pump OFF
-        // Alternate Red + Green (Orange) warning that watering is deferred
-        setStatusLed(true, true);
+        setStatusLed(true, true);           // Orange warning: watering deferred
         break;
 
       case ECO_NEED_WATER:
-        // Engage Pump
         systemState = ECO_WATERING;
         wateringStartTime = currentMillis;
         digitalWrite(PIN_PUMP_RELAY, LOW);  // Pump ON (Active LOW)
-        setStatusLed(true, true);           // Amber/Orange
-        Serial.println(F(&quot;&gt;&gt; [ACTION] Soil Dry &amp; Conditions Valid: Engaging Irrigation Pump!&quot;));
+        setStatusLed(true, true);           // Amber
+        Serial.print(F(&quot;&gt;&gt; [ACTION] Engaging Pump! Scheduled Duration: &quot;));
+        Serial.print(calculatedWateringDuration);
+        Serial.println(F(&quot; ms&quot;));
         break;
 
       case ECO_WATERING:
-        // Monitored in duration check below
         break;
 
       case ECO_RESERVOIR_LOW:
         digitalWrite(PIN_PUMP_RELAY, HIGH); // Force Pump OFF (Dry-run lockout)
-        setStatusLed(true, false);          // Solid Red Alert
-        // Periodic warning chirp every 2 seconds
+        setStatusLed(true, false);          // Red Alert
         if (currentMillis - lastBuzzerChirpTime &gt; 2000) {
           lastBuzzerChirpTime = currentMillis;
           playAlarmTone(1200, 250);
@@ -2901,12 +3046,12 @@ void loop() {
 
   // 6. Non-blocking Watering Duration Controller
   if (systemState == ECO_WATERING) {
-    if (currentMillis - wateringStartTime &gt;= MAX_WATERING_DURATION) {
+    if (currentMillis - wateringStartTime &gt;= calculatedWateringDuration) {
       digitalWrite(PIN_PUMP_RELAY, HIGH); // Turn pump OFF
       lastWateringFinishTime = currentMillis;
       systemState = ECO_OPTIMAL;
-      setStatusLed(false, true);          // Back to Green
-      Serial.println(F(&quot;&gt;&gt; [ACTION] Watering Cycle Complete. Entering Absorption Cooldown.&quot;));
+      setStatusLed(false, true);
+      Serial.println(F(&quot;&gt;&gt; [ACTION] Watering Duration Expired. Entering Absorption Cooldown.&quot;));
     }
   }
 }
@@ -3054,7 +3199,8 @@ void setup() {
   Serial.begin(115200);
   while (!Serial &amp;&amp; millis() &lt; 3000);
 
-  Serial.println(F(&quot;\n=======================================================&quot;));
+  Serial.println(F(&quot;
+=======================================================&quot;));
   Serial.println(F(&quot;  PROJECT 3: PROXIMITY RADAR &amp; MULTI-SENSOR ANTI-COLLISION&quot;));
   Serial.println(F(&quot;=======================================================&quot;));
 
@@ -3074,7 +3220,8 @@ void setup() {
   setRgbColor(0, 255, 0);              // Green
   noTone(PIN_BUZZER);
 
-  Serial.println(F(&quot;Ultrasonic &amp; Optical Radar online. Scanning perimeter...\n&quot;));
+  Serial.println(F(&quot;Ultrasonic &amp; Optical Radar online. Scanning perimeter...
+&quot;));
 }
 
 // ======================== MAIN LOOP ==============================
@@ -3233,27 +3380,23 @@ This **Sensor Fusion Level 1 Project** constructs a 4-tier physical security bub
  *  - Module #40: GY-521 (MPU-6050 I2C: A4 SDA, A5 SCL) - 6-DOF Accelerometer &amp; Gyroscope
  *  - Module #16: Shock / Vibration Sensor (Digital D2, Interrupt 0) - Impact Detection
  *  - Module #33: Metal Touch Sensor (Digital D3, Interrupt 1) - Unauthorized Contact
- *  - Module #21: Tilt Switch (Digital D4) - Discrete Gravitational Tip Sensor
+ *  - Module #21: Tilt Switch (Digital D4) - Discrete Gravitational Tip Sensor (LOW = Tilted)
  * 
  * Actuators &amp; Indicators:
- *  - Module #01: RGB LED (Pins D9 Red, D10 Green, D11 Blue) - Status Beacon
+ *  - Module #01: RGB LED (Pins D11 Red, D10 Blue, D9 Green) - Status Beacon
  *  - Module #11: Active Buzzer (Digital D8) - Intrusion Siren
  *  - Module #30: 5V Relay Module (Digital D7) - Lock Solenoid / Security Strobe
  * 
  * Sensor Fusion Matrix:
- *  Traditional motion alarms trigger accidentally from wind, slamming doors, or floor footsteps.
- *  This project fuses 4 independent sensing layers:
- *   1. Touch Layer: Detects physical hand contact with metal chassis (Module #33).
- *   2. Mechanical Shock Layer: Captures high-frequency micro-impact pulses (Module #16).
- *   3. Angular Tilt Layer: Detects sustained structural tilt via switch (Module #21).
- *   4. Inertial Vector Layer: Reads 3D acceleration vector |A| = sqrt(Ax^2 + Ay^2 + Az^2)
- *      and angular pitch/roll rates via MPU-6050 I2C registers.
+ *  1. Touch Layer: Physical hand contact with chassis (Module #33).
+ *  2. Mechanical Shock Layer: High-frequency micro-impact pulses (Module #16).
+ *  3. Angular Tilt Layer: Structural tilt via kit switch (Module #21, LOW when tilted).
+ *  4. Inertial Vector Layer: 3D acceleration vector delta via MPU-6050.
  *  
- *  Multi-Threat Evaluation:
- *   - Level 0: ARMED_SECURE (Green LED breathing, Siren silent, Relay locked)
- *   - Level 1: PROXIMITY_TOUCH (Touch triggered only -&gt; Warning Amber LED, soft chirp)
- *   - Level 2: SUSPICIOUS_MOTION (Sustained tilt or low-G wobble -&gt; Red pulse)
- *   - Level 3: INTRUSION_BREACH (Shock impact + Acceleration vector jump -&gt; SIREN + RELAY TRIP)
+ *  Multi-Threat Evaluation with State Latching:
+ *   - SEC_ARMED_NORMAL: Green LED, Siren silent, Relay locked.
+ *   - SEC_TAMPER_WARNING: Amber LED, 150ms chirp, latched for 3s calm before auto-return.
+ *   - SEC_ALARM_CRITICAL: Strobe Red/Blue, Siren pulse, Relay tripped for 8 seconds.
  */
 
 #include &lt;Wire.h&gt;
@@ -3261,24 +3404,23 @@ This **Sensor Fusion Level 1 Project** constructs a 4-tier physical security bub
 // ======================== PIN ASSIGNMENTS ========================
 const int PIN_SHOCK_SENSOR = 2;    // Shock Sensor DO (Hardware INT0)
 const int PIN_TOUCH_SENSOR = 3;    // Metal Touch DO (Hardware INT1)
-const int PIN_TILT_SWITCH  = 4;    // Tilt Switch (Digital input with pullup)
+const int PIN_TILT_SWITCH  = 4;    // Tilt Switch (Kit #21: LOW = Tilted)
 
 // Actuators
 const int PIN_RELAY_LOCK   = 7;    // 5V Relay (Active LOW)
 const int PIN_ALARM_BUZZER = 8;    // Active Buzzer
-const int PIN_RGB_RED      = 9;    // PWM
-const int PIN_RGB_GREEN    = 10;   // PWM
-const int PIN_RGB_BLUE     = 11;   // PWM
+const int PIN_RGB_RED      = 11;   // PWM
+const int PIN_RGB_BLUE     = 10;   // PWM
+const int PIN_RGB_GREEN    = 9;    // PWM
 
 // MPU-6050 I2C Address
 const int MPU_ADDR = 0x68;
 
 // ======================== SYSTEM STATES ==========================
 enum SecurityState {
-  SEC_DISARMED,        // System disarmed (Blue LED)
   SEC_ARMED_NORMAL,    // Fully armed, monitoring perimeter (Green LED)
   SEC_TAMPER_WARNING,  // Minor touch or vibration (Amber LED, short chirp)
-  SEC_ALARM_CRITICAL   // Violent shock / confirmed tilt breach (Strobe Red + Siren)
+  SEC_ALARM_CRITICAL   // Violent shock / confirmed tilt breach (Strobe Red/Blue + Siren)
 };
 
 SecurityState systemState = SEC_ARMED_NORMAL;
@@ -3292,7 +3434,6 @@ volatile unsigned long lastTouchInterruptTime = 0;
 
 // Baseline Inertial Reference
 int16_t baseAx = 0, baseAy = 0, baseAz = 0;
-int16_t baseGx = 0, baseGy = 0, baseGz = 0;
 bool mpuAvailable = false;
 
 // Non-blocking Timing
@@ -3323,6 +3464,13 @@ void isrTouch() {
   }
 }
 
+// Sequenced 16-bit register reader helper
+static inline int16_t readWire16() {
+  uint8_t h = Wire.read();
+  uint8_t l = Wire.read();
+  return ((int16_t)h &lt;&lt; 8) | l;
+}
+
 // ======================== MPU-6050 DRIVER ========================
 void initMPU6050() {
   Wire.begin();
@@ -3339,13 +3487,13 @@ void initMPU6050() {
     long axSum = 0, aySum = 0, azSum = 0;
     for (int i = 0; i &lt; 10; i++) {
       Wire.beginTransmission(MPU_ADDR);
-      Wire.write(0x3B); // Starting from ACCEL_XOUT_H
+      Wire.write(0x3B);
       Wire.endTransmission(false);
       Wire.requestFrom(MPU_ADDR, 6, true);
       if (Wire.available() &gt;= 6) {
-        axSum += (Wire.read() &lt;&lt; 8 | Wire.read());
-        aySum += (Wire.read() &lt;&lt; 8 | Wire.read());
-        azSum += (Wire.read() &lt;&lt; 8 | Wire.read());
+        axSum += readWire16();
+        aySum += readWire16();
+        azSum += readWire16();
       }
       delay(20);
     }
@@ -3354,7 +3502,7 @@ void initMPU6050() {
     baseAz = azSum / 10;
   } else {
     mpuAvailable = false;
-    Serial.println(F(&quot;&gt;&gt; WARNING: MPU-6050 Not Found on I2C bus (A4/A5). Using discrete tilt/shock sensors.&quot;));
+    Serial.println(F(&quot;&gt;&gt; WARNING: MPU-6050 Not Found on I2C bus (A4/A5). Using discrete sensors.&quot;));
   }
 }
 
@@ -3369,17 +3517,16 @@ float getInertialJerk() {
 
   if (Wire.available() &lt; 6) return 0.0;
 
-  int16_t ax = (Wire.read() &lt;&lt; 8 | Wire.read());
-  int16_t ay = (Wire.read() &lt;&lt; 8 | Wire.read());
-  int16_t az = (Wire.read() &lt;&lt; 8 | Wire.read());
+  int16_t ax = readWire16();
+  int16_t ay = readWire16();
+  int16_t az = readWire16();
 
   // Compute vector magnitude delta normalized to G (16384 LSB = 1g in +/-2g range)
   float dAx = (ax - baseAx) / 16384.0;
   float dAy = (ay - baseAy) / 16384.0;
   float dAz = (az - baseAz) / 16384.0;
 
-  float jerkMagnitude = sqrt(dAx * dAx + dAy * dAy + dAz * dAz);
-  return jerkMagnitude;
+  return sqrt(dAx * dAx + dAy * dAy + dAz * dAz);
 }
 
 // Set RGB LED Color
@@ -3394,7 +3541,8 @@ void setup() {
   Serial.begin(115200);
   while (!Serial &amp;&amp; millis() &lt; 3000);
 
-  Serial.println(F(&quot;\n=======================================================&quot;));
+  Serial.println(F(&quot;
+=======================================================&quot;));
   Serial.println(F(&quot;  PROJECT 4: MULTI-LAYER SECURITY SENTINEL &amp; IMU FUSION&quot;));
   Serial.println(F(&quot;=======================================================&quot;));
 
@@ -3420,7 +3568,8 @@ void setup() {
   // Initialize I2C IMU
   initMPU6050();
 
-  Serial.println(F(&quot;Security Sentinel ARMED. Monitoring 4 intrusion layers...\n&quot;));
+  Serial.println(F(&quot;Security Sentinel ARMED. Monitoring 4 intrusion layers...
+&quot;));
 }
 
 // ======================== MAIN LOOP ==============================
@@ -3431,35 +3580,47 @@ void loop() {
   if (currentMillis - lastSensorPollTime &gt;= POLL_INTERVAL) {
     lastSensorPollTime = currentMillis;
 
-    // 1. Read Discrete Tilt Switch (LOW = upright, HIGH = tipped over)
-    bool isTilted = (digitalRead(PIN_TILT_SWITCH) == HIGH);
+    // 1. Read Discrete Tilt Switch (Kit #21: LOW when tilted, HIGH when upright)
+    bool isTilted = (digitalRead(PIN_TILT_SWITCH) == LOW);
 
     // 2. Read IMU Acceleration Jerk
-    float imuJerk = getInertialJerk(); // Magnitude in G&#x27;s
+    float imuJerk = getInertialJerk();
 
     // 3. Sensor Fusion Threat Matrix
     bool isViolentImpact = shockDetected || (imuJerk &gt; 0.65);
-    bool isSevereTilt     = isTilted || (imuJerk &gt; 0.35);
-    bool isTouchDetected  = touchDetected;
+    bool isSevereTilt    = isTilted || (imuJerk &gt; 0.35);
+    bool isTouchDetected = touchDetected;
 
     // Reset volatile flags after latching
     shockDetected = false;
     touchDetected = false;
 
-    // 4. State Machine Progression
-    if (systemState != SEC_ALARM_CRITICAL) {
+    // 4. State Machine Progression with proper latching
+    if (systemState == SEC_ARMED_NORMAL) {
       if (isViolentImpact || (isSevereTilt &amp;&amp; isTouchDetected)) {
-        // Multi-sensor breach confirmed: Critical Alarm!
         systemState = SEC_ALARM_CRITICAL;
         alarmStartTime = currentMillis;
         Serial.println(F(&quot;&gt;&gt; [SECURITY BREACH] Confirmed Violent Impact / Forced Tampering!&quot;));
       } else if (isTouchDetected || isSevereTilt) {
-        // Single moderate event -&gt; Warning
         systemState = SEC_TAMPER_WARNING;
         alarmStartTime = currentMillis;
         Serial.println(F(&quot;&gt;&gt; [TAMPER WARNING] Surface touch or angular shift detected.&quot;));
-      } else {
+      }
+    } else if (systemState == SEC_TAMPER_WARNING) {
+      // While in warning, escalate if impact or combined touch+tilt occurs
+      if (isViolentImpact || (isSevereTilt &amp;&amp; isTouchDetected)) {
+        systemState = SEC_ALARM_CRITICAL;
+        alarmStartTime = currentMillis;
+        Serial.println(F(&quot;&gt;&gt; [SECURITY BREACH] Tamper escalated to Critical Alarm!&quot;));
+      } else if (currentMillis - alarmStartTime &gt; 3000) {
+        // Auto-return after 3 seconds of calm
         systemState = SEC_ARMED_NORMAL;
+        Serial.println(F(&quot;&gt;&gt; Tamper warning cleared. Returning to Armed Normal.&quot;));
+      }
+    } else if (systemState == SEC_ALARM_CRITICAL) {
+      if (currentMillis - alarmStartTime &gt; ALARM_HOLD_DURATION) {
+        systemState = SEC_ARMED_NORMAL;
+        Serial.println(F(&quot;&gt;&gt; Alarm Timed Out. Re-arming Sentinel...&quot;));
       }
     }
 
@@ -3480,7 +3641,6 @@ void loop() {
         case SEC_ARMED_NORMAL:   Serial.println(F(&quot;ARMED [Secure]&quot;)); break;
         case SEC_TAMPER_WARNING: Serial.println(F(&quot;WARNING [Tampering Suspected]&quot;)); break;
         case SEC_ALARM_CRITICAL: Serial.println(F(&quot;CRITICAL INTRUSION BREACH!!&quot;)); break;
-        default: break;
       }
     }
   }
@@ -3496,21 +3656,16 @@ void loop() {
     case SEC_TAMPER_WARNING:
       setRgbColor(255, 140, 0);            // Amber Warning
       digitalWrite(PIN_RELAY_LOCK, HIGH);  // Hold lock
-      // Single chirp
+      // Single 150ms chirp on entry
       if (currentMillis - alarmStartTime &lt; 150) {
         digitalWrite(PIN_ALARM_BUZZER, HIGH);
       } else {
         digitalWrite(PIN_ALARM_BUZZER, LOW);
       }
-      // Auto-return to armed after 3 seconds of calm
-      if (currentMillis - alarmStartTime &gt; 3000) {
-        systemState = SEC_ARMED_NORMAL;
-      }
       break;
 
     case SEC_ALARM_CRITICAL:
-      // Trip Relay to lock down perimeter / activate strobe
-      digitalWrite(PIN_RELAY_LOCK, LOW); // Active
+      digitalWrite(PIN_RELAY_LOCK, LOW); // Active emergency trip
 
       // Pulsing strobe siren
       if (currentMillis - lastBuzzerToggleTime &gt; 100) {
@@ -3520,18 +3675,9 @@ void loop() {
         if (buzzerToggle) {
           setRgbColor(255, 0, 0); // Strobe Red
         } else {
-          setRgbColor(0, 0, 255); // Strobe Blue (Police effect)
+          setRgbColor(0, 0, 255); // Strobe Blue
         }
       }
-
-      // Hold siren for set duration, then re-arm
-      if (currentMillis - alarmStartTime &gt; ALARM_HOLD_DURATION) {
-        systemState = SEC_ARMED_NORMAL;
-        Serial.println(F(&quot;&gt;&gt; Alarm Timed Out. Re-arming Sentinel...&quot;));
-      }
-      break;
-
-    default:
       break;
   }
 }
@@ -3580,29 +3726,32 @@ void loop() {
           <span class="code-title">📄 1.Rgb_Led.ino</span>
           <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_1', this)">📋 Copy</button>
         </div>
-        <pre id="codeContent_1"><code>int redpin = 11;    //select the pin for the red LED
+        <pre id="codeContent_1"><code>int redpin = 11;    // select the pin for the red LED
 int bluepin = 10;   // select the pin for the blue LED
 int greenpin = 9;   // select the pin for the green LED
 int val;
+
 void setup() {
-    pinMode(redpin, OUTPUT);
-    pinMode(bluepin, OUTPUT);
-    pinMode(greenpin, OUTPUT);
+  pinMode(redpin, OUTPUT);
+  pinMode(bluepin, OUTPUT);
+  pinMode(greenpin, OUTPUT);
 }
-void loop()
-{ for (val = 255; val &gt; 0; val--)
-    { analogWrite(11, val);
-    analogWrite(10, 255 - val);
-    analogWrite(9, 128 - val);
-    delay(1);
-    }
-    for (val = 0; val &lt; 255; val++)
-    { analogWrite(11, val);
-    analogWrite(10, 255 - val);
-    analogWrite(9, 128 - val);
-    delay(1);
-    }
-}</code></pre>
+
+void loop() {
+  for (val = 255; val &gt; 0; val--) {
+    analogWrite(redpin, val);
+    analogWrite(bluepin, 255 - val);
+    analogWrite(greenpin, abs(128 - val));
+    delay(3);
+  }
+  for (val = 0; val &lt; 255; val++) {
+    analogWrite(redpin, val);
+    analogWrite(bluepin, 255 - val);
+    analogWrite(greenpin, abs(128 - val));
+    delay(3);
+  }
+}
+</code></pre>
       </div>
     </div>
 
@@ -3647,29 +3796,32 @@ void loop()
           <span class="code-title">📄 2.Smd_Rgb.ino</span>
           <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_2', this)">📋 Copy</button>
         </div>
-        <pre id="codeContent_2"><code>int redpin = 11;    //select the pin for the red LED
+        <pre id="codeContent_2"><code>int redpin = 11;    // select the pin for the red LED
 int bluepin = 10;   // select the pin for the blue LED
 int greenpin = 9;   // select the pin for the green LED
 int val;
+
 void setup() {
-    pinMode(redpin, OUTPUT);
-    pinMode(bluepin, OUTPUT);
-    pinMode(greenpin, OUTPUT);
+  pinMode(redpin, OUTPUT);
+  pinMode(bluepin, OUTPUT);
+  pinMode(greenpin, OUTPUT);
 }
-void loop()
-{ for (val = 255; val &gt; 0; val--)
-    { analogWrite(11, val);
-    analogWrite(10, 255 - val);
-    analogWrite(9, 128 - val);
-    delay(1);
-    }
-    for (val = 0; val &lt; 255; val++)
-    { analogWrite(11, val);
-    analogWrite(10, 255 - val);
-    analogWrite(9, 128 - val);
-    delay(1);
-    }
-}</code></pre>
+
+void loop() {
+  for (val = 255; val &gt; 0; val--) {
+    analogWrite(redpin, val);
+    analogWrite(bluepin, 255 - val);
+    analogWrite(greenpin, abs(128 - val));
+    delay(3);
+  }
+  for (val = 0; val &lt; 255; val++) {
+    analogWrite(redpin, val);
+    analogWrite(bluepin, 255 - val);
+    analogWrite(greenpin, abs(128 - val));
+    delay(3);
+  }
+}
+</code></pre>
       </div>
     </div>
 
@@ -3893,16 +4045,57 @@ transmitter.
           <span class="code-title">📄 6.Digital_Ir_Receiver1.ino</span>
           <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_6', this)">📋 Copy</button>
         </div>
-        <pre id="codeContent_6"><code>#include &lt;IRremote.h&gt;
-int IR_PIN = 3;
-IRsend irsend(IR_PIN);
-    void setup()
-    {}
-    void loop() {
-    irsend.sendRC5(0x0, 8); //send 0x0 code (8 bits)
-        delay(200);
-    irsend.sendRC5(0x1, 8); 
-        delay(200); }</code></pre>
+        <pre id="codeContent_6"><code>// Note: This sketch uses IRremote 2.x / 3.x / 4.x compatibility
+#include &lt;IRremote.h&gt;
+
+const int RECV_PIN = 11;
+const int LED_PIN = 13;
+
+#if defined(IR_RECEIVE_PIN) || defined(DECODE_NEC)
+// IRremote 4.x Modern API
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
+  IrReceiver.begin(RECV_PIN, ENABLE_LED_FEEDBACK);
+  Serial.println(&quot;IR Receiver Ready (IRremote 4.x).&quot;);
+}
+
+void loop() {
+  if (IrReceiver.decode()) {
+    if (IrReceiver.decodedIRData.command == 0x1) {
+      digitalWrite(LED_PIN, HIGH);
+    } else {
+      digitalWrite(LED_PIN, LOW);
+    }
+    Serial.print(&quot;Protocol: &quot;);
+    Serial.print(IrReceiver.getProtocolString());
+    Serial.print(&quot; | Command: 0x&quot;);
+    Serial.println(IrReceiver.decodedIRData.command, HEX);
+    IrReceiver.resume();
+  }
+}
+#else
+// Legacy IRremote 2.x API fallback
+IRrecv irrecv(RECV_PIN);
+decode_results results;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
+  irrecv.enableIRIn(); // Start the receiver
+}
+
+void loop() {
+  if (irrecv.decode(&amp;results)) {
+    if (results.bits &gt; 0) {
+      int state = (results.value == 0x1) ? HIGH : LOW;
+      digitalWrite(LED_PIN, state);
+    }
+    irrecv.resume();
+  }
+}
+#endif
+</code></pre>
       </div>
     </div>
 
@@ -4343,28 +4536,30 @@ is acoustic-optic display. The circuit in this experiment can produce sound.
           <span class="code-title">📄 Passtive_Buzzer.ino</span>
           <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_12', this)">📋 Copy</button>
         </div>
-        <pre id="codeContent_12"><code>int buzzer=3;//set digital IO pin of the buzzer
-void setup() 
-{ 
-pinMode(buzzer,OUTPUT);// set digital IO pin pattern, OUTPUT to be output 
+        <pre id="codeContent_12"><code>int buzzer = 3; // digital IO pin for the buzzer
+
+void setup() { 
+  pinMode(buzzer, OUTPUT); 
 } 
-void loop() 
-{ unsigned char i,j;//define variable
-while(1) 
-{ for(i=0;i&lt;80;i++)// output a frequency sound
-{ digitalWrite(buzzer,HIGH);// sound
-delay(1);//delay1ms 
-digitalWrite(buzzer,LOW);//not sound
-delay(1);//ms delay 
-} 
-for(i=0;i&lt;100;i++)// output a frequency sound
-{ 
-digitalWrite(buzzer,HIGH);// sound
-digitalWrite(buzzer,LOW);//not sound
-delay(2);//2ms delay 
+
+void loop() { 
+  // High pitch tone (approx 500 Hz)
+  for (int i = 0; i &lt; 80; i++) { 
+    digitalWrite(buzzer, HIGH);
+    delay(1); 
+    digitalWrite(buzzer, LOW);
+    delay(1); 
+  } 
+
+  // Lower pitch tone (approx 250 Hz)
+  for (int i = 0; i &lt; 100; i++) { 
+    digitalWrite(buzzer, HIGH);
+    delay(2);
+    digitalWrite(buzzer, LOW);
+    delay(2); 
+  }
 }
-} 
-} </code></pre>
+</code></pre>
       </div>
     </div>
 
@@ -4423,26 +4618,30 @@ simple programming, finally displaying it on the monitor.
         </div>
         <pre id="codeContent_13"><code>int ThermistorPin = A0;
 int Vo;
-float R1 = 10000; // value of R1 on board
+float R1 = 10000.0; // value of R1 (10k resistor on module)
 float logR2, R2, T;
-float c1 = 0.001129148, c2 = 0.000234125, c3 = 0.0000000876741; //steinhart-hart coeficients for thermistor
+float c1 = 0.001129148, c2 = 0.000234125, c3 = 0.0000000876741; // Steinhart-Hart coefficients
+
 void setup() {
   Serial.begin(9600);
 }
+
 void loop() {
   Vo = analogRead(ThermistorPin);
-  // R2 = R1 * (1023.0 / (float)Vo - 1.0); //calculate resistance on thermistor
+  if (Vo &lt;= 0) Vo = 1;
+  if (Vo &gt;= 1023) Vo = 1022;
+
   R2 = R1 / ((1023.0 / (float)Vo) - 1.0);
   logR2 = log(R2);
-  T = (1.0 / (c1 + c2*logR2 + c3*logR2*logR2*logR2)); // temperature in Kelvin
-  T = T - 273.15; //convert Kelvin to Celcius
- // T = (T * 9.0)/ 5.0 + 32.0; //convert Celcius to Farenheit
+  T = (1.0 / (c1 + c2 * logR2 + c3 * logR2 * logR2 * logR2)); // temperature in Kelvin
+  T = T - 273.15; // convert Kelvin to Celsius
 
   Serial.print(&quot;Temperature: &quot;); 
-  Serial.print(T);
+  Serial.print(T, 1);
   Serial.println(&quot; C&quot;); 
   delay(500);
-}</code></pre>
+}
+</code></pre>
       </div>
     </div>
 
@@ -4560,69 +4759,70 @@ that it just requires one data line (and GND) to communicate with the Arduino.
         </div>
         <pre id="codeContent_15"><code>#include &lt;OneWire.h&gt; 
 
-int DS18S20_Pin = 2; //DS18S20 Signal pin on digital 2
+int DS18B20_Pin = 2; // DS18B20 Signal pin on digital pin 2
 
-//Temperature chip i/o
-OneWire ds(DS18S20_Pin); // on digital pin 2
+OneWire ds(DS18B20_Pin);
 
 void setup(void) {
- Serial.begin(9600);
+  Serial.begin(9600);
 }
 
 void loop(void) {
- float temperature = getTemp();
- Serial.println(temperature);
- 
- delay(100); //just here to slow down the output so it is easier to read
- 
+  float temperature = getTemp();
+  if (temperature != -1000.0) {
+    Serial.print(&quot;Temperature: &quot;);
+    Serial.print(temperature);
+    Serial.println(&quot; C&quot;);
+  }
+  delay(1000);
 }
 
+float getTemp() {
+  byte data[12];
+  byte addr[8];
 
-float getTemp(){
- //returns the temperature from one DS18S20 in DEG Celsius
+  if (!ds.search(addr)) {
+    ds.reset_search();
+    return -1000.0;
+  }
 
- byte data[12];
- byte addr[8];
+  if (OneWire::crc8(addr, 7) != addr[7]) {
+    Serial.println(&quot;CRC is not valid!&quot;);
+    return -1000.0;
+  }
 
- if ( !ds.search(addr)) {
-   //no more sensors on chain, reset search
-   ds.reset_search();
-   return -1000;
- }
+  if (addr[0] != 0x10 &amp;&amp; addr[0] != 0x28) {
+    Serial.println(&quot;Device is not recognized as a DS18x20 family sensor&quot;);
+    return -1000.0;
+  }
 
- if ( OneWire::crc8( addr, 7) != addr[7]) {
-   Serial.println(&quot;CRC is not valid!&quot;);
-   return -1000;
- }
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44, 1); // start conversion, parasite power on
+  delay(750);        // 750ms required for 12-bit temperature conversion
 
- if ( addr[0] != 0x10 &amp;&amp; addr[0] != 0x28) {
-   Serial.print(&quot;Device is not recognized&quot;);
-   return -1000;
- }
+  byte present = ds.reset();
+  (void)present;
+  ds.select(addr);  
+  ds.write(0xBE);    // Read Scratchpad
 
- ds.reset();
- ds.select(addr);
- ds.write(0x44,1); // start conversion, with parasite power on at the end
+  for (int i = 0; i &lt; 9; i++) {
+    data[i] = ds.read();
+  }
+  ds.reset_search();
 
- byte present = ds.reset();
- ds.select(addr);  
- ds.write(0xBE); // Read Scratchpad
-
- 
- for (int i = 0; i &lt; 9; i++) { // we need 9 bytes
-  data[i] = ds.read();
- }
- 
- ds.reset_search();
- 
- byte MSB = data[1];
- byte LSB = data[0];
-
- float tempRead = ((MSB &lt;&lt; 8) | LSB); //using two&#x27;s compliment
- float TemperatureSum = tempRead / 16;
- 
- return TemperatureSum;
- 
+  int16_t raw = ((int16_t)data[1] &lt;&lt; 8) | data[0];
+  if (addr[0] == 0x10) {
+    // DS18S20: 9-bit resolution (0.5 C / LSB)
+    raw = raw &lt;&lt; 3; // 12-bit standard
+    if (data[7] == 0x10) {
+      raw = (raw &amp; 0xFFF0) + 12 - data[6];
+    }
+    return (float)raw * 0.0625;
+  } else {
+    // DS18B20: 12-bit resolution
+    return (float)raw / 16.0;
+  }
 }
 </code></pre>
       </div>
@@ -4877,39 +5077,66 @@ rotation in positive and reverse direction.
           <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_19', this)">📋 Copy</button>
         </div>
         <pre id="codeContent_19"><code>#define SERIAL_BAUDRATE 115200
-#define CLK_PIN 2 // define connection pin
+#define CLK_PIN 2
 #define DT_PIN 3
 #define SW_PIN 4
 
-#define interruptA 0 // UNO pin2 is interrupt 0，refer to the official website of other board
-
 volatile long count = 0;
-unsigned long t = 0;
+volatile bool countChanged = false;
+volatile unsigned long lastInterruptTime = 0;
+long lastReportedCount = 0;
+
+void rotaryEncoderChanged() {
+  unsigned long now = millis();
+  if (now - lastInterruptTime &lt; 4) // 4ms contact bounce filter
+    return;
+  lastInterruptTime = now;
+
+  // DT_PIN state represents forward or reverse rotation
+  if (digitalRead(DT_PIN) == HIGH) {
+    count++;
+  } else {
+    count--;
+  }
+  countChanged = true;
+}
 
 void setup() {
   Serial.begin(SERIAL_BAUDRATE);
-  // when the state is down, the rotary encoder is rotated.
-  attachInterrupt(interruptA, rotaryEncoderChanged, FALLING);
-  pinMode(CLK_PIN, INPUT_PULLUP); // Input mode and enable internal pull up resistor
-  pinMode(DT_PIN, INPUT_PULLUP); 
-  pinMode(SW_PIN, INPUT_PULLUP); 
+  pinMode(CLK_PIN, INPUT_PULLUP);
+  pinMode(DT_PIN, INPUT_PULLUP);
+  pinMode(SW_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(CLK_PIN), rotaryEncoderChanged, FALLING);
+  Serial.println(&quot;Rotary encoder initialized.&quot;);
 }
+
 void loop() {
-  if(digitalRead(SW_PIN) == LOW){ // Press the switch, return to zero
-     count = 0;  
-     Serial.println(&quot;count reset to 0&quot;);
-     delay(300);
+  if (countChanged) {
+    long currentCount;
+    noInterrupts();
+    currentCount = count;
+    countChanged = false;
+    interrupts();
+    if (currentCount != lastReportedCount) {
+      lastReportedCount = currentCount;
+      Serial.print(&quot;Count: &quot;);
+      Serial.println(currentCount);
+    }
   }
-}
-void rotaryEncoderChanged(){ // when CLK_PIN is FALLING
-  unsigned long temp = millis();
-  if(temp - t &lt; 200) // remove bounce
-    return;
-  t = temp;
-  
-  // DT_PIN state represents a forward or reverse.
-  count += digitalRead(DT_PIN) == HIGH ? 1 : -1;
-  Serial.println(count);
+
+  if (digitalRead(SW_PIN) == LOW) {
+    delay(20); // debounce switch
+    if (digitalRead(SW_PIN) == LOW) {
+      noInterrupts();
+      count = 0;
+      countChanged = false;
+      interrupts();
+      lastReportedCount = 0;
+      Serial.println(&quot;Count reset to 0&quot;);
+      while (digitalRead(SW_PIN) == LOW); // wait for release
+      delay(50);
+    }
+  }
 }
 </code></pre>
       </div>
@@ -4956,26 +5183,29 @@ void rotaryEncoderChanged(){ // when CLK_PIN is FALLING
           <span class="code-title">📄 20.Joystick.ino</span>
           <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_20', this)">📋 Copy</button>
         </div>
-        <pre id="codeContent_20"><code>int value = 0;
+        <pre id="codeContent_20"><code>const int xPin = A0;
+const int yPin = A1;
+const int swPin = 2;
 
 void setup() {
-  pinMode(3, OUTPUT);
   Serial.begin(9600);
+  pinMode(swPin, INPUT_PULLUP);
 }
 
 void loop() {
-  value = analogRead(0);
-  Serial.print(&quot;X:&quot;);
-  Serial.print(value, DEC);
+  int xVal = analogRead(xPin);
+  int yVal = analogRead(yPin);
+  int swVal = digitalRead(swPin);
 
-  value = analogRead(1);
-  Serial.print(&quot; | Y:&quot;);
-  Serial.println(value, DEC);
+  Serial.print(&quot;X: &quot;);
+  Serial.print(xVal);
+  Serial.print(&quot; | Y: &quot;);
+  Serial.print(yVal);
+  Serial.print(&quot; | Button: &quot;);
+  Serial.println(swVal == LOW ? &quot;PRESSED&quot; : &quot;RELEASED&quot;);
 
   delay(100);
 }
-
-
 </code></pre>
       </div>
     </div>
@@ -5631,19 +5861,18 @@ relay capable of handling up to 250VAC and 10A.
           <span class="code-title">📄 30.Relay.ino</span>
           <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_30', this)">📋 Copy</button>
         </div>
-        <pre id="codeContent_30"><code> int Relay = 8;
-  void setup()
-{
-  pinMode(13, OUTPUT);         //Set Pin13 as output
-  digitalWrite(13, HIGH);     //Set Pin13 High
-  pinMode(Relay, OUTPUT);     //Set Pin3 as output
+        <pre id="codeContent_30"><code>int Relay = 8; // Connect Relay IN pin to Arduino digital pin 8
+
+void setup() {
+  pinMode(Relay, OUTPUT); // Set relay pin as output
+  digitalWrite(Relay, HIGH); // Standard kit relay is Active LOW (HIGH = OFF)
 }
-void loop()
-{
-          digitalWrite(Relay, HIGH);   //Turn off relay
-          delay(1000);
-          digitalWrite(Relay, LOW);    //Turn on relay
-          delay(1000);
+
+void loop() {
+  digitalWrite(Relay, LOW);  // Turn ON relay (Active LOW)
+  delay(1000);
+  digitalWrite(Relay, HIGH); // Turn OFF relay
+  delay(1000);
 }
 </code></pre>
       </div>
@@ -6426,17 +6655,19 @@ void loop() {
   Wire.requestFrom(MPU_ADDR, 7*2, true); // request a total of 7*2=14 registers
   
   // &quot;Wire.read()&lt;&lt;8 | Wire.read();&quot; means two registers are read and stored in the same variable
-  accelerometer_x = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
-  accelerometer_y = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
-  accelerometer_z = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
-  gyro_x = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x43 (GYRO_XOUT_H) and 0x44 (GYRO_XOUT_L)
-  gyro_y = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x45 (GYRO_YOUT_H) and 0x46 (GYRO_YOUT_L)
-  gyro_z = Wire.read()&lt;&lt;8 | Wire.read(); // reading registers: 0x47 (GYRO_ZOUT_H) and 0x48 (GYRO_ZOUT_L)
+  accelerometer_x = ((int16_t)Wire.read() &lt;&lt; 8) | Wire.read(); // 0x3B (ACCEL_XOUT_H) and 0x3C (ACCEL_XOUT_L)
+  accelerometer_y = ((int16_t)Wire.read() &lt;&lt; 8) | Wire.read(); // 0x3D (ACCEL_YOUT_H) and 0x3E (ACCEL_YOUT_L)
+  accelerometer_z = ((int16_t)Wire.read() &lt;&lt; 8) | Wire.read(); // 0x3F (ACCEL_ZOUT_H) and 0x40 (ACCEL_ZOUT_L)
+  temperature     = ((int16_t)Wire.read() &lt;&lt; 8) | Wire.read(); // 0x41 (TEMP_OUT_H)  and 0x42 (TEMP_OUT_L)
+  gyro_x          = ((int16_t)Wire.read() &lt;&lt; 8) | Wire.read(); // 0x43 (GYRO_XOUT_H)  and 0x44 (GYRO_XOUT_L)
+  gyro_y          = ((int16_t)Wire.read() &lt;&lt; 8) | Wire.read(); // 0x45 (GYRO_YOUT_H)  and 0x46 (GYRO_YOUT_L)
+  gyro_z          = ((int16_t)Wire.read() &lt;&lt; 8) | Wire.read(); // 0x47 (GYRO_ZOUT_H)  and 0x48 (GYRO_ZOUT_L)
   
   // print out data
   Serial.print(&quot;aX = &quot;); Serial.print(convert_int16_to_str(accelerometer_x));
   Serial.print(&quot; | aY = &quot;); Serial.print(convert_int16_to_str(accelerometer_y));
   Serial.print(&quot; | aZ = &quot;); Serial.print(convert_int16_to_str(accelerometer_z));
+  Serial.print(&quot; | tmp = &quot;); Serial.print((temperature / 340.00) + 36.53); Serial.print(&quot; C&quot;);
   // the following equation was taken from the documentation [MPU-6000/MPU-6050 Register Map and Description, p.30]
   Serial.print(&quot; | gX = &quot;); Serial.print(convert_int16_to_str(gyro_x));
   Serial.print(&quot; | gY = &quot;); Serial.print(convert_int16_to_str(gyro_y));
@@ -6862,25 +7093,35 @@ ultrasonic transmitter and receiver as well as the corresponding control circuit
           <span class="code-title">📄 45.Ultrasonic_Module.ino</span>
           <button class="btn btn-outline btn-sm" onclick="copyCode('codeContent_45', this)">📋 Copy</button>
         </div>
-        <pre id="codeContent_45"><code>int inputPin=4; // define ultrasonic signal receiver pin ECHO to D4 
-int outputPin=5; // define ultrasonic signal transmitter pin TRIG to D5
- void setup()
-{
-Serial.begin(9600); 
-pinMode(inputPin, INPUT); 
-pinMode(outputPin, OUTPUT);
+        <pre id="codeContent_45"><code>int echoPin = 4; // ultrasonic signal receiver pin ECHO to D4 
+int trigPin = 5; // ultrasonic signal transmitter pin TRIG to D5
 
+void setup() {
+  Serial.begin(9600); 
+  pinMode(echoPin, INPUT); 
+  pinMode(trigPin, OUTPUT);
 }
-void loop()
-{
-digitalWrite(outputPin, LOW); delayMicroseconds(2);
-digitalWrite(outputPin, HIGH); // Pulse for 10μ s to trigger ultrasonic detection
-delayMicroseconds(10); 
-digitalWrite(outputPin, LOW);
-int distance = pulseIn(inputPin, HIGH); // Read receiver pulse time 
-distance= distance/58; // Transform pulse time to distance 
-Serial.println(distance); //Output distance
-delay(50);
+
+void loop() {
+  digitalWrite(trigPin, LOW); 
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH); // Pulse for 10us to trigger ultrasonic detection
+  delayMicroseconds(10); 
+  digitalWrite(trigPin, LOW);
+
+  // 30ms timeout corresponds to approx 5 meters max distance
+  unsigned long duration = pulseIn(echoPin, HIGH, 30000); 
+
+  if (duration == 0) {
+    Serial.println(&quot;Out of range / No echo&quot;);
+  } else {
+    float distance = (float)duration / 58.0; // Transform pulse time (us) to cm
+    Serial.print(&quot;Distance: &quot;);
+    Serial.print(distance, 1);
+    Serial.println(&quot; cm&quot;);
+  }
+
+  delay(60); // 60ms between pings prevents ultrasonic echo confusion
 }
 </code></pre>
       </div>

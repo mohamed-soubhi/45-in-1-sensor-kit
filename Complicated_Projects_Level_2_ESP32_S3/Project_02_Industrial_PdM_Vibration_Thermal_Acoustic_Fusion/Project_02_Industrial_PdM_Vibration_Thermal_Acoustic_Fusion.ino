@@ -69,9 +69,11 @@ enum MachineHealthZone {
 
 // Double-Buffer Vibration Storage (500 Hz Sampling)
 const int SAMPLE_WINDOW = 128;
-float accelBufferX[SAMPLE_WINDOW];
-float accelBufferY[SAMPLE_WINDOW];
-float accelBufferZ[SAMPLE_WINDOW];
+float accelBufferX[2][SAMPLE_WINDOW];
+float accelBufferY[2][SAMPLE_WINDOW];
+float accelBufferZ[2][SAMPLE_WINDOW];
+volatile int writeBuf = 0;
+volatile int readBuf = 1;
 volatile int bufferIndex = 0;
 volatile bool bufferReady = false;
 
@@ -102,9 +104,19 @@ void IRAM_ATTR isrTachometer() {
 // ======================== HELPER FUNCTIONS ==================================
 float readBearingTempC() {
   int raw = analogRead(PIN_TEMP_ANALOG);
-  // Linear scaling for LM35 or calibrated NTC (0-3.3V)
-  float voltage = (raw / 4095.0f) * 3.3f;
-  return voltage * 100.0f; // 10 mV / °C (LM35 equivalent)
+  if (raw <= 10) return -20.0f;
+  if (raw >= 4085) return 120.0f;
+  // Kit module #13: 10k pullup resistor and 10k NTC thermistor to ground
+  // Formula: R_ntc = 10k / ((4095 / raw) - 1.0)
+  float rTherm = 10000.0f / ((4095.0f / (float)raw) - 1.0f);
+  // Steinhart-Hart / Beta equation (B = 3950, R0 = 10k at 25°C = 298.15K)
+  float steinhart = rTherm / 10000.0f;          // (R/Ro)
+  steinhart = log(steinhart);                   // ln(R/Ro)
+  steinhart /= 3950.0f;                         // 1/B * ln(R/Ro)
+  steinhart += 1.0f / (25.0f + 273.15f);        // + (1/To)
+  steinhart = 1.0f / steinhart;                 // Invert to Kelvin
+  float tempC = steinhart - 273.15f;            // Convert to Celsius
+  return tempC;
 }
 
 // Set RGB LED Color
@@ -128,21 +140,26 @@ void TaskVibrationSampler(void *pvParameters) {
     Wire.beginTransmission(MPU_ADDR);
     Wire.write(0x3B);
     Wire.endTransmission(false);
-    Wire.requestFrom(MPU_ADDR, 6, true);
+    Wire.requestFrom((uint8_t)MPU_ADDR, (size_t)6, true);
 
     if (Wire.available() >= 6) {
-      int16_t ax = (Wire.read() << 8 | Wire.read());
-      int16_t ay = (Wire.read() << 8 | Wire.read());
-      int16_t az = (Wire.read() << 8 | Wire.read());
+      uint8_t axh = Wire.read(); uint8_t axl = Wire.read();
+      uint8_t ayh = Wire.read(); uint8_t ayl = Wire.read();
+      uint8_t azh = Wire.read(); uint8_t azl = Wire.read();
+      int16_t ax = (int16_t)((axh << 8) | axl);
+      int16_t ay = (int16_t)((ayh << 8) | ayl);
+      int16_t az = (int16_t)((azh << 8) | azl);
 
-      // Convert to g's (16384 LSB/g)
-      accelBufferX[bufferIndex] = ax / 16384.0f;
-      accelBufferY[bufferIndex] = ay / 16384.0f;
-      accelBufferZ[bufferIndex] = az / 16384.0f;
+      // Convert to g's (16384 LSB/g) into active write buffer
+      accelBufferX[writeBuf][bufferIndex] = ax / 16384.0f;
+      accelBufferY[writeBuf][bufferIndex] = ay / 16384.0f;
+      accelBufferZ[writeBuf][bufferIndex] = az / 16384.0f;
 
       bufferIndex++;
       if (bufferIndex >= SAMPLE_WINDOW) {
         bufferIndex = 0;
+        readBuf = writeBuf;
+        writeBuf = 1 - writeBuf;
         bufferReady = true;
       }
     }
@@ -164,31 +181,34 @@ void TaskDiagnostics(void *pvParameters) {
     // 1. Process Vibration Window if Ready
     if (bufferReady) {
       bufferReady = false;
+      int curRead = readBuf;
 
       float sumSquares = 0.0f;
       float peakVal = 0.0f;
       float sumFourthPower = 0.0f;
       float mean = 0.0f;
 
-      // Calculate Total Dynamic Acceleration Magnitude: |a| - 1g (remove gravity)
+      // Calculate Total Dynamic Acceleration Magnitude: |a| - 1g (remove static gravity)
       for (int i = 0; i < SAMPLE_WINDOW; i++) {
-        float ax = accelBufferX[i];
-        float ay = accelBufferY[i];
-        float az = accelBufferZ[i];
+        float ax = accelBufferX[curRead][i];
+        float ay = accelBufferY[curRead][i];
+        float az = accelBufferZ[curRead][i];
         float mag = sqrt(ax * ax + ay * ay + az * az) - 1.0f;
         mean += mag;
       }
       mean /= SAMPLE_WINDOW;
 
       for (int i = 0; i < SAMPLE_WINDOW; i++) {
-        float ax = accelBufferX[i];
-        float ay = accelBufferY[i];
-        float az = accelBufferZ[i];
-        float mag = abs(sqrt(ax * ax + ay * ay + az * az) - 1.0f);
+        float ax = accelBufferX[curRead][i];
+        float ay = accelBufferY[curRead][i];
+        float az = accelBufferZ[curRead][i];
+        float mag = sqrt(ax * ax + ay * ay + az * az) - 1.0f; // signed dynamic acceleration
 
-        sumSquares += (mag - mean) * (mag - mean);
-        sumFourthPower += pow(mag - mean, 4);
-        if (mag > peakVal) peakVal = mag;
+        float diff = mag - mean;
+        sumSquares += diff * diff;
+        sumFourthPower += diff * diff * diff * diff;
+        float absMag = abs(mag);
+        if (absMag > peakVal) peakVal = absMag;
       }
 
       float variance = sumSquares / SAMPLE_WINDOW;

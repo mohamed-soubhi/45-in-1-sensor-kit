@@ -5,9 +5,9 @@
  * Kit: Hosyond 45-in-1 Sensor Kit
  * 
  * Fused Sensors:
- *  - Module #42: Soil Moisture Sensor (Analog A0)
+ *  - Module #42: Soil Moisture Sensor (Analog A0) [Kit: High ADC = Dry, Low ADC = Wet]
  *  - Module #39: Water Level Sensor (Analog A1) - Reservoir Monitor
- *  - Module #14: Photoresistor LDR Module (Analog A2) - Solar Insolation
+ *  - Module #14: Photoresistor LDR Module (Analog A2) [Inverted: High ADC = Bright Sun]
  *  - Module #07: DHT11 Sensor (Digital D4) - Ambient Temp & Humidity
  * 
  * Actuators & Indicators:
@@ -16,18 +16,18 @@
  *  - Module #12: Passive Buzzer (Digital D8) - Low Reservoir Alert Tones
  * 
  * Sensor Fusion Logic:
- *  1. Evapotranspiration Index: Integrates Soil Dryness with Ambient Temp & Sunlight.
- *  2. Anti-Scorch Interlock: Suspends routine watering under direct intense sunlight (Lux > 80%)
- *     to prevent plant leaf sunburn and wasteful evaporation, unless moisture is critically low.
- *  3. Dry-Run Pump Protection: Prevents relay engagement if water reservoir level is below 15%,
- *     protecting the pump motor from burnout and emitting an audible warning beep.
- *  4. Hysteresis Thresholding: Prevents rapid on/off relay hunting using dual-band logic.
+ *  1. Corrected Polarity: Soil sensor reads dry at high ADC (matching kit #42 reference).
+ *     Photoresistor is inverted so higher value = brighter sun (matching kit #14 reference).
+ *  2. Evapotranspiration Index: Dynamic watering duration modulated by ambient temp/humidity.
+ *  3. Anti-Scorch Interlock: Suspends routine watering under direct intense midday sun (>75%).
+ *  4. Dry-Run Pump Protection: Locks out pump when reservoir is depleted (<15%).
+ *  5. Soil Hysteresis: Stops watering once soil reaches saturation threshold.
  */
 
 // ======================== PIN ASSIGNMENTS ========================
-const int PIN_SOIL_MOISTURE = A0;   // Soil Moisture (0=Dry, 1023=Submerged in water)
+const int PIN_SOIL_MOISTURE = A0;   // Soil Moisture (High = Dry, Low = Wet)
 const int PIN_WATER_LEVEL   = A1;   // Reservoir Level (0=Empty, >500=Full)
-const int PIN_PHOTORESISTOR = A2;   // Ambient Light (0=Dark, 1023=Intense Sun)
+const int PIN_PHOTORESISTOR = A2;   // Ambient Light (Raw is high in dark)
 const int PIN_DHT11_DATA    = 4;    // DHT11 1-wire communication pin
 const int PIN_PUMP_RELAY    = 7;    // 5V Relay (Active LOW)
 const int PIN_BUZZER        = 8;    // Passive Buzzer tone pin
@@ -35,10 +35,11 @@ const int PIN_LED_RED       = 9;    // Double Color LED - Red
 const int PIN_LED_GREEN     = 10;   // Double Color LED - Green
 
 // ==================== CALIBRATION & THRESHOLDS ===================
-const int SOIL_DRY_THRESHOLD       = 350;  // Below this ADC = Soil needs water
-const int SOIL_SATURATED_THRESHOLD = 650;  // Above this ADC = Soil is satisfied
-const int RESERVOIR_EMPTY_LIMIT    = 180;  // Below this ADC = Reservoir is dry!
-const int SUNLIGHT_SCORCH_LIMIT    = 750;  // Above this ADC = Peak direct sun
+// Aligned with Kit #42 reference sketch: >= 800 is dry
+const int SOIL_DRY_THRESHOLD       = 750;  // Above this ADC = Dry soil (Needs water)
+const int SOIL_SATURATED_THRESHOLD = 450;  // Below this ADC = Saturated soil (Stop watering)
+const int RESERVOIR_EMPTY_LIMIT    = 180;  // Below this ADC = Reservoir is empty!
+const int SUNLIGHT_SCORCH_LIMIT    = 750;  // Inverted lux above this = Direct midday sun
 
 // ===================== STATE MACHINE =============================
 enum EcosystemState {
@@ -56,14 +57,13 @@ unsigned long lastSensorReadTime = 0;
 const unsigned long SENSOR_INTERVAL = 1000; // ms
 
 unsigned long wateringStartTime = 0;
-const unsigned long MAX_WATERING_DURATION = 5000; // 5 seconds max per cycle
-const unsigned long WATERING_COOLDOWN     = 15000; // 15 seconds absorption delay
+unsigned long calculatedWateringDuration = 4000; // Dynamically computed from evapotranspiration
+const unsigned long WATERING_COOLDOWN = 15000;   // 15 seconds absorption delay
 unsigned long lastWateringFinishTime = 0;
 
 unsigned long lastBuzzerChirpTime = 0;
 
 // DHT11 Simplified Non-blocking Driver
-// (Avoids external library dependency while providing reliable readings)
 struct DHTData {
   float temperature;
   float humidity;
@@ -74,48 +74,32 @@ DHTData readDHT11(int pin) {
   DHTData result = {25.0, 50.0, false};
   byte data[5] = {0, 0, 0, 0, 0};
 
-  // Bus handshake
   pinMode(pin, OUTPUT);
   digitalWrite(pin, LOW);
-  delay(20); // 18-20ms start pulse
+  delay(20);
   digitalWrite(pin, HIGH);
   delayMicroseconds(30);
   pinMode(pin, INPUT);
 
-  // Wait for DHT response (80us LOW + 80us HIGH)
   unsigned long timeout = micros();
-  while (digitalRead(pin) == HIGH) {
-    if (micros() - timeout > 100) return result;
-  }
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout > 100) return result; }
   timeout = micros();
-  while (digitalRead(pin) == LOW) {
-    if (micros() - timeout > 100) return result;
-  }
+  while (digitalRead(pin) == LOW)  { if (micros() - timeout > 100) return result; }
   timeout = micros();
-  while (digitalRead(pin) == HIGH) {
-    if (micros() - timeout > 100) return result;
-  }
+  while (digitalRead(pin) == HIGH) { if (micros() - timeout > 100) return result; }
 
-  // Read 40 bits
   for (int i = 0; i < 40; i++) {
     timeout = micros();
-    while (digitalRead(pin) == LOW) {
-      if (micros() - timeout > 100) return result;
-    }
+    while (digitalRead(pin) == LOW) { if (micros() - timeout > 100) return result; }
     unsigned long pulseStart = micros();
     timeout = micros();
-    while (digitalRead(pin) == HIGH) {
-      if (micros() - timeout > 100) return result;
-    }
+    while (digitalRead(pin) == HIGH) { if (micros() - timeout > 100) return result; }
     unsigned long pulseLen = micros() - pulseStart;
     int byteIdx = i / 8;
     data[byteIdx] <<= 1;
-    if (pulseLen > 40) {
-      data[byteIdx] |= 1; // 70us high = bit 1
-    }
+    if (pulseLen > 40) data[byteIdx] |= 1;
   }
 
-  // Checksum verification
   if (data[4] == ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) {
     result.humidity = data[0] + (data[1] * 0.1);
     result.temperature = data[2] + (data[3] * 0.1);
@@ -124,13 +108,11 @@ DHTData readDHT11(int pin) {
   return result;
 }
 
-// Set Bi-Color Status LED (Common Cathode)
 void setStatusLed(bool redOn, bool greenOn) {
   digitalWrite(PIN_LED_RED, redOn ? HIGH : LOW);
   digitalWrite(PIN_LED_GREEN, greenOn ? HIGH : LOW);
 }
 
-// Tone generator for Passive Buzzer
 void playAlarmTone(int freq, int durationMs) {
   tone(PIN_BUZZER, freq, durationMs);
 }
@@ -165,43 +147,51 @@ void loop() {
   if (currentMillis - lastSensorReadTime >= SENSOR_INTERVAL) {
     lastSensorReadTime = currentMillis;
 
-    // 1. Read All Physical Domain Sensors
-    int rawSoilMoisture = analogRead(PIN_SOIL_MOISTURE);
+    // 1. Read Raw Sensors
+    int rawSoilMoisture = analogRead(PIN_SOIL_MOISTURE); // High = Dry, Low = Wet
     int rawWaterLevel   = analogRead(PIN_WATER_LEVEL);
-    int rawSunlight     = analogRead(PIN_PHOTORESISTOR);
-    DHTData dht = readDHT11(PIN_DHT11_DATA);
+    int rawLdr          = analogRead(PIN_PHOTORESISTOR); // Kit #14: High = Dark
+    int rawSunlight     = 1023 - rawLdr;                 // Inverted: High = Bright sun
+    DHTData dht         = readDHT11(PIN_DHT11_DATA);
 
     // Normalize Soil Moisture (0% = Bone Dry, 100% = Saturated)
-    float soilPercent = constrain(map(rawSoilMoisture, 150, 850, 0, 100), 0, 100);
+    float soilPercent = 100.0 - constrain(map(rawSoilMoisture, 350, 850, 0, 100), 0, 100);
     // Normalize Water Reservoir (0% = Dry, 100% = Full)
     float reservoirPercent = constrain(map(rawWaterLevel, 100, 700, 0, 100), 0, 100);
-    // Sunlight Level
+    // Normalize Sunlight
     float sunlightPercent = constrain(map(rawSunlight, 50, 950, 0, 100), 0, 100);
 
     // 2. Sensor Fusion Logic Matrix
     bool isReservoirCritical = (rawWaterLevel < RESERVOIR_EMPTY_LIMIT);
-    bool isSoilDry           = (rawSoilMoisture < SOIL_DRY_THRESHOLD);
-    bool isSoilSaturated     = (rawSoilMoisture >= SOIL_SATURATED_THRESHOLD);
-    bool isIntenseSunlight   = (rawSunlight > SUNLIGHT_SCORCH_LIMIT);
+    bool isSoilDry           = (rawSoilMoisture >= SOIL_DRY_THRESHOLD);
+    bool isSoilSaturated     = (rawSoilMoisture <= SOIL_SATURATED_THRESHOLD);
+    bool isIntenseSunlight   = (rawSunlight >= SUNLIGHT_SCORCH_LIMIT);
 
     // Evapotranspiration Multiplier
-    // High ambient temp (>28C) & Low humidity (<40%) increases water demand
     float waterDemandFactor = 1.0;
     if (dht.valid) {
       if (dht.temperature > 28.0) waterDemandFactor += 0.3;
       if (dht.humidity < 40.0)    waterDemandFactor += 0.2;
     }
+    // Calculate dynamic watering duration (between 2.5s and 6.0s)
+    calculatedWateringDuration = constrain((unsigned long)(3500 * waterDemandFactor), 2500, 6000);
 
     // 3. State Machine Transitions
     if (isReservoirCritical) {
       systemState = ECO_RESERVOIR_LOW;
     } else if (systemState == ECO_WATERING) {
-      // Handled in non-blocking timer below
+      // Check if soil has become saturated early (hysteresis cutoff)
+      if (isSoilSaturated) {
+        digitalWrite(PIN_PUMP_RELAY, HIGH); // Turn pump OFF
+        lastWateringFinishTime = currentMillis;
+        systemState = ECO_OPTIMAL;
+        setStatusLed(false, true);
+        Serial.println(F(">> [ACTION] Soil Saturated reached. Shutting down pump early."));
+      }
     } else if (isSoilDry) {
-      // Cooldown check (allow water to absorb into soil)
       if (currentMillis - lastWateringFinishTime > WATERING_COOLDOWN) {
         if (isIntenseSunlight && soilPercent > 10.0) {
-          // Delay routine watering under scorching sun, unless critically dry (<10%)
+          // Delay routine watering under scorching sun to prevent leaf burns
           systemState = ECO_SUN_SUSPENDED;
         } else {
           systemState = ECO_NEED_WATER;
@@ -222,27 +212,25 @@ void loop() {
 
       case ECO_SUN_SUSPENDED:
         digitalWrite(PIN_PUMP_RELAY, HIGH); // Pump OFF
-        // Alternate Red + Green (Orange) warning that watering is deferred
-        setStatusLed(true, true);
+        setStatusLed(true, true);           // Orange warning: watering deferred
         break;
 
       case ECO_NEED_WATER:
-        // Engage Pump
         systemState = ECO_WATERING;
         wateringStartTime = currentMillis;
         digitalWrite(PIN_PUMP_RELAY, LOW);  // Pump ON (Active LOW)
-        setStatusLed(true, true);           // Amber/Orange
-        Serial.println(F(">> [ACTION] Soil Dry & Conditions Valid: Engaging Irrigation Pump!"));
+        setStatusLed(true, true);           // Amber
+        Serial.print(F(">> [ACTION] Engaging Pump! Scheduled Duration: "));
+        Serial.print(calculatedWateringDuration);
+        Serial.println(F(" ms"));
         break;
 
       case ECO_WATERING:
-        // Monitored in duration check below
         break;
 
       case ECO_RESERVOIR_LOW:
         digitalWrite(PIN_PUMP_RELAY, HIGH); // Force Pump OFF (Dry-run lockout)
-        setStatusLed(true, false);          // Solid Red Alert
-        // Periodic warning chirp every 2 seconds
+        setStatusLed(true, false);          // Red Alert
         if (currentMillis - lastBuzzerChirpTime > 2000) {
           lastBuzzerChirpTime = currentMillis;
           playAlarmTone(1200, 250);
@@ -275,12 +263,12 @@ void loop() {
 
   // 6. Non-blocking Watering Duration Controller
   if (systemState == ECO_WATERING) {
-    if (currentMillis - wateringStartTime >= MAX_WATERING_DURATION) {
+    if (currentMillis - wateringStartTime >= calculatedWateringDuration) {
       digitalWrite(PIN_PUMP_RELAY, HIGH); // Turn pump OFF
       lastWateringFinishTime = currentMillis;
       systemState = ECO_OPTIMAL;
-      setStatusLed(false, true);          // Back to Green
-      Serial.println(F(">> [ACTION] Watering Cycle Complete. Entering Absorption Cooldown."));
+      setStatusLed(false, true);
+      Serial.println(F(">> [ACTION] Watering Duration Expired. Entering Absorption Cooldown."));
     }
   }
 }

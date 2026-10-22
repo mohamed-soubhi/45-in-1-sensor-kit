@@ -210,11 +210,15 @@ void handleRoot() {
 }
 
 void handleData() {
+  AttitudeEstimate att;
+  if (xQueuePeek(telemetryQueue, &att, pdMS_TO_TICKS(10)) != pdTRUE) {
+    att = currentAttitude;
+  }
   String json = "{";
-  json += "\"roll\":" + String(currentAttitude.roll, 2) + ",";
-  json += "\"pitch\":" + String(currentAttitude.pitch, 2) + ",";
-  json += "\"yaw\":" + String(currentAttitude.yaw, 2) + ",";
-  json += "\"impact\":" + String(currentAttitude.isImpact ? "true" : "false");
+  json += "\"roll\":" + String(att.roll, 2) + ",";
+  json += "\"pitch\":" + String(att.pitch, 2) + ",";
+  json += "\"yaw\":" + String(att.yaw, 2) + ",";
+  json += "\"impact\":" + String(att.isImpact ? "true" : "false");
   json += "}";
   server.send(200, "application/json", json);
 }
@@ -236,21 +240,27 @@ void TaskSensorFusion(void *pvParameters) {
     if (dt <= 0.0f || dt > 0.1f) dt = 0.01f;
 
     // 1. Read MPU-6050 Accelerometer & Gyroscope via I2C with Mutex
-    int16_t axRaw, ayRaw, azRaw, gxRaw, gyRaw, gzRaw;
+    int16_t axRaw = 0, ayRaw = 0, azRaw = 16384, gxRaw = 0, gyRaw = 0, gzRaw = 0;
     if (xSemaphoreTake(i2cMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
       Wire.beginTransmission(MPU_ADDR);
       Wire.write(0x3B);
       Wire.endTransmission(false);
-      Wire.requestFrom(MPU_ADDR, 14, true);
+      Wire.requestFrom((uint8_t)MPU_ADDR, (size_t)14, true);
 
       if (Wire.available() >= 14) {
-        axRaw = (Wire.read() << 8 | Wire.read());
-        ayRaw = (Wire.read() << 8 | Wire.read());
-        azRaw = (Wire.read() << 8 | Wire.read());
+        uint8_t axh = Wire.read(); uint8_t axl = Wire.read();
+        uint8_t ayh = Wire.read(); uint8_t ayl = Wire.read();
+        uint8_t azh = Wire.read(); uint8_t azl = Wire.read();
         Wire.read(); Wire.read(); // Skip temperature
-        gxRaw = (Wire.read() << 8 | Wire.read());
-        gyRaw = (Wire.read() << 8 | Wire.read());
-        gzRaw = (Wire.read() << 8 | Wire.read());
+        uint8_t gxh = Wire.read(); uint8_t gxl = Wire.read();
+        uint8_t gyh = Wire.read(); uint8_t gyl = Wire.read();
+        uint8_t gzh = Wire.read(); uint8_t gzl = Wire.read();
+        axRaw = (int16_t)((axh << 8) | axl);
+        ayRaw = (int16_t)((ayh << 8) | ayl);
+        azRaw = (int16_t)((azh << 8) | azl);
+        gxRaw = (int16_t)((gxh << 8) | gxl);
+        gyRaw = (int16_t)((gyh << 8) | gyl);
+        gzRaw = (int16_t)((gzh << 8) | gzl);
       }
       xSemaphoreGive(i2cMutex);
     }
@@ -278,6 +288,24 @@ void TaskSensorFusion(void *pvParameters) {
     float panOffset = map(joyX, 0, 4095, -30, 30);
     float tiltOffset = map(joyY, 0, 4095, -30, 30);
 
+    // Rotary Encoder manual roll trim
+    static int lastEncClk = HIGH;
+    int encClk = digitalRead(PIN_ENC_CLK);
+    if (encClk != lastEncClk && encClk == LOW) {
+      if (digitalRead(PIN_ENC_DT) != encClk) {
+        rollTrimOffset += 0.5f;
+      } else {
+        rollTrimOffset -= 0.5f;
+      }
+    }
+    lastEncClk = encClk;
+
+    // Joystick or Encoder switch resets manual trim
+    if (digitalRead(PIN_JOY_SW) == LOW || digitalRead(PIN_ENC_SW) == LOW) {
+      rollTrimOffset = 0.0f;
+      pitchTrimOffset = 0.0f;
+    }
+
     // Update Global Attitude
     currentAttitude.roll = roll + rollTrimOffset;
     currentAttitude.pitch = pitch + pitchTrimOffset + tiltOffset;
@@ -290,21 +318,29 @@ void TaskSensorFusion(void *pvParameters) {
 
     // 4. Actuator Gimbal PWM Output
     if (!emergencyBrake) {
-      // Map Roll (-45 to +45 deg) to Servo PWM Pulse (1ms to 2ms)
-      int rollPwm = constrain(map((int)currentAttitude.roll, -45, 45, 1000, 2000), 1000, 2000);
-      int pitchPwm = constrain(map((int)currentAttitude.pitch, -45, 45, 1000, 2000), 1000, 2000);
-      ledcWrite(3, rollPwm);
-      ledcWrite(4, pitchPwm);
+      // Map Roll/Pitch (-45 to +45 deg) to Servo PWM Pulse (1000us to 2000us)
+      int rollUs = constrain(map((int)currentAttitude.roll, -45, 45, 1000, 2000), 1000, 2000);
+      int pitchUs = constrain(map((int)currentAttitude.pitch, -45, 45, 1000, 2000), 1000, 2000);
+      // Convert pulse us to 14-bit duty (50 Hz period = 20000 us, max duty = 16383)
+      uint32_t rollDuty = (uint32_t)rollUs * 16383UL / 20000UL;
+      uint32_t pitchDuty = (uint32_t)pitchUs * 16383UL / 20000UL;
+      ledcWrite(PIN_GIMBAL_ROLL, rollDuty);
+      ledcWrite(PIN_GIMBAL_PITCH, pitchDuty);
       // Status RGB: Smooth Cyan (Stabilizing active)
-      ledcWrite(0, 0);   // Red
-      ledcWrite(1, 180); // Green
-      ledcWrite(2, 255); // Blue
+      ledcWrite(PIN_RGB_RED, 0);
+      ledcWrite(PIN_RGB_GREEN, 180);
+      ledcWrite(PIN_RGB_BLUE, 255);
+      digitalWrite(PIN_BUZZER, LOW);
     } else {
-      // Impact emergency override: lock actuators & pulse Red
-      ledcWrite(0, 255); // Red
-      ledcWrite(1, 0);
-      ledcWrite(2, 0);
-      if (millis() - lastShockTime > 3000) emergencyBrake = false; // Auto-resume after 3s
+      // Impact emergency override: lock actuators, buzz & pulse Red
+      ledcWrite(PIN_RGB_RED, 255);
+      ledcWrite(PIN_RGB_GREEN, 0);
+      ledcWrite(PIN_RGB_BLUE, 0);
+      digitalWrite(PIN_BUZZER, (millis() / 200) % 2 ? HIGH : LOW);
+      if (millis() - lastShockTime > 3000) {
+        emergencyBrake = false; // Auto-resume after 3s
+        digitalWrite(PIN_BUZZER, LOW);
+      }
     }
 
     // Push to Queue for Core 0
@@ -341,16 +377,24 @@ void setup() {
   Wire.write(0);
   Wire.endTransmission();
 
-  // 2. Hardware Interrupt for Shock Sensor
+  // 2. Hardware Interrupt for Shock Sensor & Input Peripherals
   pinMode(PIN_SHOCK, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(PIN_SHOCK), isrShockImpact, FALLING);
+  pinMode(PIN_ENC_CLK, INPUT_PULLUP);
+  pinMode(PIN_ENC_DT, INPUT_PULLUP);
+  pinMode(PIN_ENC_SW, INPUT_PULLUP);
+  pinMode(PIN_JOY_SW, INPUT_PULLUP);
+  pinMode(PIN_BUZZER, OUTPUT);
+  digitalWrite(PIN_BUZZER, HIGH);
+  delay(60);
+  digitalWrite(PIN_BUZZER, LOW);
 
   // 3. Configure High-Resolution LEDC PWM Channels
   ledcAttach(PIN_RGB_RED, 5000, 8);   // 5 kHz, 8-bit resolution
   ledcAttach(PIN_RGB_GREEN, 5000, 8);
   ledcAttach(PIN_RGB_BLUE, 5000, 8);
-  ledcAttach(PIN_GIMBAL_ROLL, 50, 16);  // 50 Hz Servo standard, 16-bit
-  ledcAttach(PIN_GIMBAL_PITCH, 50, 16);
+  ledcAttach(PIN_GIMBAL_ROLL, 50, 14);  // 50 Hz Servo standard, 14-bit
+  ledcAttach(PIN_GIMBAL_PITCH, 50, 14);
 
   // 4. Initialize Wi-Fi Access Point & Web Server
   WiFi.softAP(AP_SSID, AP_PASS);

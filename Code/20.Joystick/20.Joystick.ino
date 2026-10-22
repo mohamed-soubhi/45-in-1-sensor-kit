@@ -1,20 +1,23 @@
-int value = 0;
+const int xPin = A0;
+const int yPin = A1;
+const int swPin = 2;
 
 void setup() {
-  pinMode(3, OUTPUT);
   Serial.begin(9600);
+  pinMode(swPin, INPUT_PULLUP);
 }
 
 void loop() {
-  value = analogRead(0);
-  Serial.print("X:");
-  Serial.print(value, DEC);
+  int xVal = analogRead(xPin);
+  int yVal = analogRead(yPin);
+  int swVal = digitalRead(swPin);
 
-  value = analogRead(1);
-  Serial.print(" | Y:");
-  Serial.println(value, DEC);
+  Serial.print("X: ");
+  Serial.print(xVal);
+  Serial.print(" | Y: ");
+  Serial.print(yVal);
+  Serial.print(" | Button: ");
+  Serial.println(swVal == LOW ? "PRESSED" : "RELEASED");
 
   delay(100);
 }
-
-

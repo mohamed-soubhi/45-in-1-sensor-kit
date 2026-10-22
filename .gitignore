@@ -1,0 +1,21 @@
+# Build output and documentation caches
+docs/build/
+*.doctree
+*.pickle
+.buildinfo
+
+# Editor and IDE configurations
+.vscode/
+.idea/
+*.swp
+*.bak
+*~
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Arduino build cache
+build/
+*.hex
+*.elf

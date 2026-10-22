@@ -115,8 +115,49 @@ struct RTCDateTime {
   byte second, minute, hour, day, month, year;
 };
 
+void rtcInit() {
+  // Clear write protect
+  digitalWrite(PIN_RTC_RST, HIGH);
+  delayMicroseconds(4);
+  rtcWriteByte(0x8E); // Write Protect register
+  rtcWriteByte(0x00); // WP = 0 (disable protection)
+  digitalWrite(PIN_RTC_RST, LOW);
+  delayMicroseconds(4);
+
+  // Read Seconds register (0x81) to check Clock-Halt bit (bit 7)
+  digitalWrite(PIN_RTC_RST, HIGH);
+  delayMicroseconds(4);
+  rtcWriteByte(0x81);
+  byte secReg = rtcReadByte();
+  digitalWrite(PIN_RTC_RST, LOW);
+  delayMicroseconds(4);
+
+  if (secReg & 0x80) { // CH = 1: clock is halted
+    // Start clock and initialize default operational time: 10:30:00
+    digitalWrite(PIN_RTC_RST, HIGH);
+    delayMicroseconds(4);
+    rtcWriteByte(0x80); // Seconds write
+    rtcWriteByte(0x00); // CH = 0, sec = 0
+    digitalWrite(PIN_RTC_RST, LOW);
+    delayMicroseconds(4);
+
+    digitalWrite(PIN_RTC_RST, HIGH);
+    delayMicroseconds(4);
+    rtcWriteByte(0x82); // Minutes write
+    rtcWriteByte(0x30); // 30 min BCD
+    digitalWrite(PIN_RTC_RST, LOW);
+    delayMicroseconds(4);
+
+    digitalWrite(PIN_RTC_RST, HIGH);
+    delayMicroseconds(4);
+    rtcWriteByte(0x84); // Hours write (24h mode)
+    rtcWriteByte(0x10); // 10 AM BCD
+    digitalWrite(PIN_RTC_RST, LOW);
+  }
+}
+
 RTCDateTime readRTC() {
-  RTCDateTime dt = {0, 30, 10, 22, 10, 26}; // Default 10:30 AM
+  RTCDateTime dt = {0, 30, 10, 22, 10, 26}; // Default valid 10:30 AM fallback
   digitalWrite(PIN_RTC_RST, HIGH);
   delayMicroseconds(4);
   rtcWriteByte(0xBF); // Clock burst read
@@ -129,9 +170,11 @@ RTCDateTime readRTC() {
   byte yr   = rtcReadByte();
   digitalWrite(PIN_RTC_RST, LOW);
 
-  dt.second = (sec & 0x0F) + ((sec >> 4) & 0x07) * 10;
-  dt.minute = (min & 0x0F) + ((min >> 4) & 0x07) * 10;
-  dt.hour   = (hr & 0x0F) + ((hr >> 4) & 0x03) * 10;
+  if (sec != 0xFF && min != 0xFF && hr != 0xFF && (sec != 0 || min != 0 || hr != 0)) {
+    dt.second = (sec & 0x0F) + ((sec >> 4) & 0x07) * 10;
+    dt.minute = (min & 0x0F) + ((min >> 4) & 0x07) * 10;
+    dt.hour   = (hr & 0x0F) + ((hr >> 4) & 0x03) * 10;
+  }
   return dt;
 }
 
@@ -205,6 +248,10 @@ void TaskBiometricPulse(void *pvParameters) {
             peakCount = 0;
             ibiSum = 0.0f;
           }
+        } else {
+          // Invalid interval resets consecutive beat sequence
+          peakCount = 0;
+          ibiSum = 0.0f;
         }
       } else if (dynamicPulse < 0.0f) {
         isPeak = false;
@@ -233,7 +280,8 @@ void TaskSecurityController(void *pvParameters) {
 
     // 1. Read Physical Tamper Domain
     bool touchActive = (digitalRead(PIN_TOUCH_DIGITAL) == HIGH);
-    bool tiltActive  = (digitalRead(PIN_TILT_DIGITAL) == HIGH);
+    // Kit module #21 reads LOW when tilted, HIGH when upright
+    bool tiltActive  = (digitalRead(PIN_TILT_DIGITAL) == LOW);
 
     // Read MPU-6050 3D seismic jerk
     float accelJerk = 0.0f;
@@ -241,11 +289,14 @@ void TaskSecurityController(void *pvParameters) {
       Wire.beginTransmission(MPU_ADDR);
       Wire.write(0x3B);
       Wire.endTransmission(false);
-      Wire.requestFrom(MPU_ADDR, 6, true);
+      Wire.requestFrom((uint8_t)MPU_ADDR, (size_t)6, true);
       if (Wire.available() >= 6) {
-        int16_t ax = (Wire.read() << 8 | Wire.read());
-        int16_t ay = (Wire.read() << 8 | Wire.read());
-        int16_t az = (Wire.read() << 8 | Wire.read());
+        uint8_t axh = Wire.read(); uint8_t axl = Wire.read();
+        uint8_t ayh = Wire.read(); uint8_t ayl = Wire.read();
+        uint8_t azh = Wire.read(); uint8_t azl = Wire.read();
+        int16_t ax = (int16_t)((axh << 8) | axl);
+        int16_t ay = (int16_t)((ayh << 8) | ayl);
+        int16_t az = (int16_t)((azh << 8) | azl);
         float dAx = (ax / 16384.0f) - baselineAx;
         float dAy = (ay / 16384.0f) - baselineAy;
         float dAz = (az / 16384.0f) - baselineAz;
@@ -260,8 +311,8 @@ void TaskSecurityController(void *pvParameters) {
       Serial.println(F(">> [CRITICAL SECURITY] Seismic Drill / Inversion Tamper Detected!"));
     }
 
-    // 2. Fetch Biometric Data Thread-Safely
-    BiometricResult bio;
+    // 2. Fetch Biometric Data Thread-Safely (safe default initialization)
+    BiometricResult bio = {0, 0.0f, false, false};
     if (xSemaphoreTake(vaultMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
       bio = currentBio;
       xSemaphoreGive(vaultMutex);
@@ -318,6 +369,11 @@ void TaskSecurityController(void *pvParameters) {
         if (now - stateStartTime > 5000) {
           currentVaultState = VAULT_STANDBY;
           digitalWrite(PIN_SOLENOID_RELAY, HIGH); // Re-lock
+          // Unlatch biometric liveness so holding finger doesn't re-grant indefinitely
+          if (xSemaphoreTake(vaultMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
+            currentBio.livenessConfirmed = false;
+            xSemaphoreGive(vaultMutex);
+          }
           Serial.println(F(">> Door Solenoid Locked. Returning to Standby."));
         }
         break;
@@ -361,12 +417,13 @@ void setup() {
   pinMode(PIN_RGB_GREEN, OUTPUT);
   pinMode(PIN_RGB_BLUE, OUTPUT);
 
-  // Configure DS1302 Pins
+  // Configure DS1302 Pins and start oscillator
   pinMode(PIN_RTC_RST, OUTPUT);
   pinMode(PIN_RTC_CLK, OUTPUT);
   pinMode(PIN_RTC_DAT, OUTPUT);
   digitalWrite(PIN_RTC_RST, LOW);
   digitalWrite(PIN_RTC_CLK, LOW);
+  rtcInit();
 
   digitalWrite(PIN_SOLENOID_RELAY, HIGH); // Locked
   setLedColor(0, 0, 255); // Blue Standby
@@ -378,7 +435,33 @@ void setup() {
   Wire.write(0);
   if (Wire.endTransmission() == 0) {
     mpuActive = true;
-    Serial.println(F("MPU-6050 Anti-Tamper Core Initialized."));
+    Serial.println(F("MPU-6050 Anti-Tamper Core Initialized. Calibrating baseline..."));
+    // Calibrate resting baseline over 32 samples (C1 fix)
+    float sumAx = 0, sumAy = 0, sumAz = 0;
+    int samples = 0;
+    delay(50);
+    for (int i = 0; i < 32; i++) {
+      Wire.beginTransmission(MPU_ADDR);
+      Wire.write(0x3B);
+      Wire.endTransmission(false);
+      Wire.requestFrom((uint8_t)MPU_ADDR, (size_t)6, true);
+      if (Wire.available() >= 6) {
+        uint8_t axh = Wire.read(); uint8_t axl = Wire.read();
+        uint8_t ayh = Wire.read(); uint8_t ayl = Wire.read();
+        uint8_t azh = Wire.read(); uint8_t azl = Wire.read();
+        sumAx += (int16_t)((axh << 8) | axl) / 16384.0f;
+        sumAy += (int16_t)((ayh << 8) | ayl) / 16384.0f;
+        sumAz += (int16_t)((azh << 8) | azl) / 16384.0f;
+        samples++;
+      }
+      delay(5);
+    }
+    if (samples > 0) {
+      baselineAx = sumAx / samples;
+      baselineAy = sumAy / samples;
+      baselineAz = sumAz / samples;
+    }
+    Serial.println(F("MPU-6050 baseline calibrated."));
   }
 
   vaultMutex = xSemaphoreCreateMutex();
